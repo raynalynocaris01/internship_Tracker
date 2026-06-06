@@ -12,9 +12,14 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('attendance_records', function (Blueprint $table) {
-            $table->id();
-            $table->timestamps();
-        });
+        $table->id();
+        $table->foreignId('student_id')->constrained()->onDelete('cascade');
+        $table->date('date');
+        $table->string('session_type'); // morning_in, morning_out, afternoon_in, afternoon_out
+        $table->time('time');
+        $table->decimal('total_hours', 5, 2)->default(0.00); // Tracks hours rendered per check out
+        $table->timestamps();
+    });
     }
 
     /**
@@ -22,6 +27,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('attendance_records');
+        //
     }
 };

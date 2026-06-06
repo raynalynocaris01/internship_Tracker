@@ -13,6 +13,11 @@ return new class extends Migration
     {
         Schema::create('qr_sessions', function (Blueprint $table) {
             $table->id();
+            $table->string('qr_token')->unique();
+            $table->foreignId('section_id')->constrained()->onDelete('cascade');
+            $table->date('date');
+            $table->string('session_type');
+            $table->timestamp('expires_at');
             $table->timestamps();
         });
     }
