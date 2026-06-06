@@ -16,7 +16,7 @@ class User extends Authenticatable
         'password',
         'role',
         'student_id',
-        'teacher_id',  // Changed from employee_id
+        'teacher_id',
         'department',
         'course',
         'year_level',
@@ -49,19 +49,34 @@ class User extends Authenticatable
     }
 
     // Relationships
-    public function internships()
+    public function studentEnrollments()
     {
-        return $this->hasMany(Internship::class, 'student_id');
+        return $this->hasMany(StudentSubjectEnrollment::class, 'student_id');
     }
 
-    public function supervisedInternships()
+    public function teachingEnrollments()
     {
-        return $this->hasMany(Internship::class, 'teacher_id');
+        return $this->hasMany(StudentSubjectEnrollment::class, 'teacher_id');
+    }
+
+    public function subjectSections()
+    {
+        return $this->hasMany(SubjectSection::class, 'teacher_id');
     }
 
     public function attendances()
     {
         return $this->hasMany(Attendance::class, 'student_id');
+    }
+
+    public function qrCode()
+    {
+        return $this->hasOne(StudentQRCode::class, 'student_id');
+    }
+
+    public function activityLogs()
+    {
+        return $this->hasMany(ActivityLog::class);
     }
 
     // Scopes
@@ -80,15 +95,22 @@ class User extends Authenticatable
         return $query->where('role', 'admin');
     }
 
-    // Accessor for displaying teacher ID
-    public function getTeacherIdFormattedAttribute()
+    // Accessors
+    public function getTotalHoursAttribute()
     {
-        return $this->teacher_id ? 'TCH-' . $this->teacher_id : null;
+        return $this->attendances()->sum('hours_worked');
     }
 
-    // Accessor for displaying student ID
-    public function getStudentIdFormattedAttribute()
+    public function getTotalAttendanceDaysAttribute()
     {
-        return $this->student_id ? 'STU-' . $this->student_id : null;
+        return $this->attendances()->count();
+    }
+
+    public function getCurrentEnrollmentAttribute()
+    {
+        return $this->studentEnrollments()
+            ->where('status', 'enrolled')
+            ->with('subject')
+            ->first();
     }
 }
