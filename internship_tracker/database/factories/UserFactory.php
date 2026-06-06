@@ -2,44 +2,52 @@
 
 namespace Database\Factories;
 
-use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 
-/**
- * @extends Factory<User>
- */
 class UserFactory extends Factory
 {
-    /**
-     * The current password being used by the factory.
-     */
     protected static ?string $password;
 
-    /**
-     * Define the model's default state.
-     *
-     * @return array<string, mixed>
-     */
     public function definition(): array
     {
         return [
-            'name' => fake()->name(),
-            'email' => fake()->unique()->safeEmail(),
+            'name' => $this->faker->name(),
+            'email' => $this->faker->unique()->safeEmail(),
             'email_verified_at' => now(),
             'password' => static::$password ??= Hash::make('password'),
             'remember_token' => Str::random(10),
+            'role' => 'student',
+            'department' => $this->faker->randomElement(['Computer Science', 'Engineering', 'Business']),
         ];
     }
 
-    /**
-     * Indicate that the model's email address should be unverified.
-     */
-    public function unverified(): static
+    public function admin(): static
     {
         return $this->state(fn (array $attributes) => [
-            'email_verified_at' => null,
+            'role' => 'admin',
+            'email' => 'admin@internship.com',
+            'name' => 'System Administrator',
+        ]);
+    }
+
+    public function teacher(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'role' => 'teacher',
+            'teacher_id' => $this->faker->unique()->numberBetween(1000, 9999), // Changed from employee_id
+            'department' => $this->faker->randomElement(['Computer Science', 'Engineering', 'Business']),
+        ]);
+    }
+
+    public function student(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'role' => 'student',
+            'student_id' => $this->faker->unique()->numberBetween(10000, 99999),
+            'course' => $this->faker->randomElement(['BSIT', 'BSCS', 'BSIS']),
+            'year_level' => $this->faker->numberBetween(1, 4),
         ]);
     }
 }
