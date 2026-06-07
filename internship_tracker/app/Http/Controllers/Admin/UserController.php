@@ -9,14 +9,24 @@ use Illuminate\Support\Facades\Hash;
 
 class UserController extends Controller
 {
-  
-    public function index()
+    public function index(Request $request)
     {
-        $students = User::students()->latest()->paginate(10);
-        $teachers = User::teachers()->latest()->paginate(10);
-        $admins = User::admins()->latest()->paginate(10);
+        $role = $request->get('role', 'all');
         
-        return view('admin.users.index', compact('students', 'teachers', 'admins'));
+        $query = User::query();
+        
+        if ($role !== 'all') {
+            $query->where('role', $role);
+        }
+        
+        $users = $query->latest()->paginate(15);
+        
+        // Get counts for each role (for the tabs)
+        $totalStudents = User::where('role', 'student')->count();
+        $totalTeachers = User::where('role', 'teacher')->count();
+        $totalAdmins = User::where('role', 'admin')->count();
+        
+        return view('admin.users.index', compact('users', 'role', 'totalStudents', 'totalTeachers', 'totalAdmins'));
     }
 
     public function create()
@@ -29,21 +39,49 @@ class UserController extends Controller
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users',
+            'password' => 'required|string|min:8|confirmed',
             'role' => 'required|in:admin,teacher,student',
             'student_id' => 'nullable|required_if:role,student|unique:users',
-            'teacher_id' => 'nullable|required_if:role,teacher|unique:users',  // Changed from employee_id
+            'teacher_id' => 'nullable|required_if:role,teacher|unique:users',
             'department' => 'nullable|string',
             'course' => 'nullable|required_if:role,student|string',
             'year_level' => 'nullable|required_if:role,student|integer|min:1|max:4',
-            'password' => 'required|string|min:8|confirmed',
         ]);
 
-        $validated['password'] = Hash::make($validated['password']);
-        
-        User::create($validated);
-        
+        $userData = [
+            'name' => $validated['name'],
+            'email' => $validated['email'],
+            'password' => Hash::make($validated['password']),
+            'role' => $validated['role'],
+            'department' => $validated['department'] ?? null,
+        ];
+
+        // Add role-specific fields
+        if ($validated['role'] === 'student') {
+            $userData['student_id'] = $validated['student_id'];
+            $userData['course'] = $validated['course'];
+            $userData['year_level'] = $validated['year_level'];
+        } elseif ($validated['role'] === 'teacher') {
+            $userData['teacher_id'] = $validated['teacher_id'];
+        }
+
+        User::create($userData);
+
         return redirect()->route('admin.users.index')
             ->with('success', 'User created successfully.');
+    }
+
+    public function show(User $user)
+    {
+        $attendanceCount = 0;
+        $totalHours = 0;
+        
+        if ($user->isStudent()) {
+            $attendanceCount = $user->attendances()->count();
+            $totalHours = $user->attendances()->sum('hours_worked');
+        }
+        
+        return view('admin.users.show', compact('user', 'attendanceCount', 'totalHours'));
     }
 
     public function edit(User $user)
@@ -59,13 +97,12 @@ class UserController extends Controller
             'department' => 'nullable|string',
         ];
 
-        // Add role-specific validation
-        if ($user->role === 'student') {
+        if ($user->isStudent()) {
             $rules['student_id'] = 'nullable|string|unique:users,student_id,' . $user->id;
             $rules['course'] = 'nullable|string';
             $rules['year_level'] = 'nullable|integer|min:1|max:4';
-        } elseif ($user->role === 'teacher') {
-            $rules['teacher_id'] = 'nullable|string|unique:users,teacher_id,' . $user->id;  // Changed from employee_id
+        } elseif ($user->isTeacher()) {
+            $rules['teacher_id'] = 'nullable|string|unique:users,teacher_id,' . $user->id;
         }
 
         if ($request->filled('password')) {
@@ -74,19 +111,32 @@ class UserController extends Controller
 
         $validated = $request->validate($rules);
 
+        $updateData = [
+            'name' => $validated['name'],
+            'email' => $validated['email'],
+            'department' => $validated['department'] ?? $user->department,
+        ];
+
         if ($request->filled('password')) {
-            $validated['password'] = Hash::make($request->password);
+            $updateData['password'] = Hash::make($request->password);
         }
 
-        $user->update($validated);
-        
+        if ($user->isStudent()) {
+            $updateData['student_id'] = $validated['student_id'] ?? $user->student_id;
+            $updateData['course'] = $validated['course'] ?? $user->course;
+            $updateData['year_level'] = $validated['year_level'] ?? $user->year_level;
+        } elseif ($user->isTeacher()) {
+            $updateData['teacher_id'] = $validated['teacher_id'] ?? $user->teacher_id;
+        }
+
+        $user->update($updateData);
+
         return redirect()->route('admin.users.index')
             ->with('success', 'User updated successfully.');
     }
 
     public function destroy(User $user)
     {
-        // Prevent deleting yourself
         if ($user->id === auth()->id()) {
             return redirect()->route('admin.users.index')
                 ->with('error', 'You cannot delete your own account.');
@@ -96,10 +146,5 @@ class UserController extends Controller
         
         return redirect()->route('admin.users.index')
             ->with('success', 'User deleted successfully.');
-    }
-
-    public function show(User $user)
-    {
-        return view('admin.users.show', compact('user'));
     }
 }
