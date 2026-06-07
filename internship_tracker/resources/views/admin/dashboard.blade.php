@@ -1,3 +1,4 @@
+{{-- resources/views/admin/dashboard.blade.php --}}
 @extends('layouts.app')
 
 @section('title', 'Admin Dashboard')
@@ -23,16 +24,14 @@
             <div class="dashboard-card-icon">📚</div>
             <h3>Subjects</h3>
             <div class="count">{{ $totalSubjects ?? 0 }}</div>
-            <!-- Temporarily comment out or change to # -->
-            <a href="#" class="btn btn-sm">Manage →</a>
+            <a href="{{ route('admin.subjects.index') }}" class="btn btn-sm">Manage →</a>
         </div>
 
         <div class="card dashboard-card">
             <div class="dashboard-card-icon">👥</div>
             <h3>Sections</h3>
             <div class="count">{{ $totalSections ?? 0 }}</div>
-            <!-- Temporarily comment out or change to # -->
-            <a href="#" class="btn btn-sm">Manage →</a>
+            <a href="{{ route('admin.sections.index') }}" class="btn btn-sm">Manage →</a>
         </div>
 
         <div class="card dashboard-card">
@@ -50,19 +49,19 @@
             <a href="{{ route('admin.users.create') }}?role=teacher" class="action-chip">
                 <span>➕</span> Add Teacher
             </a>
-            <a href="#" class="action-chip">
+            <a href="{{ route('admin.subjects.create') }}" class="action-chip">
                 <span>📖</span> Add Subject
             </a>
-            <a href="#" class="action-chip">
+            <a href="{{ route('admin.sections.create') }}" class="action-chip">
                 <span>🏫</span> Add Section
             </a>
             <a href="{{ route('admin.users.create') }}?role=student" class="action-chip">
                 <span>👨‍🎓</span> Add Student
             </a>
-            <a href="#" class="action-chip">
-                <span>📱</span> QR Attendance
+            <a href="{{ route('admin.enrollments.create') }}" class="action-chip">
+                <span>📋</span> Enroll Student
             </a>
-            <a href="#" class="action-chip">
+            <a href="{{ route('admin.attendances.index') }}" class="action-chip">
                 <span>📊</span> View Reports
             </a>
         </div>
@@ -81,8 +80,9 @@
                     <div class="activity-item">
                         <div class="activity-dot"></div>
                         <div>
-                            <p style="margin: 0 0 4px;">{{ $activity['description'] }}</p>
-                            <span class="text-muted" style="font-size: 0.75rem;">{{ $activity['time'] }}</span>
+                            {{-- FIXED: Check if activity is array or object --}}
+                            <p style="margin: 0 0 4px;">{{ is_array($activity) ? $activity['description'] : $activity->description }}</p>
+                            <span class="text-muted" style="font-size: 0.75rem;">{{ is_array($activity) ? $activity['time'] : $activity->created_at->diffForHumans() }}</span>
                         </div>
                     </div>
                 @empty
@@ -132,8 +132,8 @@
                     <span>{{ app()->version() }}</span>
                 </div>
                 <div class="status-item">
-                    <span>Last Backup</span>
-                    <span>{{ date('M d, Y') }}</span>
+                    <span>Total Enrolled Students</span>
+                    <span>{{ $totalEnrolled ?? 0 }}</span>
                 </div>
                 <div class="status-item">
                     <span>Current Time</span>
@@ -149,7 +149,7 @@
         <div class="card">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
                 <h2 style="font-size: 1.2rem;">Top Subjects by Enrollment</h2>
-                <a href="#" class="text-muted" style="font-size: 0.85rem;">Manage →</a>
+                <a href="{{ route('admin.subjects.index') }}" class="text-muted" style="font-size: 0.85rem;">Manage →</a>
             </div>
             <div class="table-responsive">
                 <table style="width: 100%;">
@@ -163,14 +163,14 @@
                     <tbody>
                         @forelse($topSubjects ?? [] as $subject)
                         <tr>
-                            <td>{{ $subject['name'] }}</td>
-                            <td>{{ $subject['student_count'] ?? 0 }}</td>
+                            <td>{{ is_array($subject) ? $subject['name'] : $subject->name }}</td>
+                            <td>{{ is_array($subject) ? $subject['student_count'] : $subject->student_count }}</td>
                             <td>
                                 <div style="display: flex; align-items: center; gap: 8px;">
                                     <div style="flex: 1; background: #e5e7eb; border-radius: 999px; height: 6px; overflow: hidden;">
-                                        <div style="width: {{ $subject['completion_rate'] ?? 0 }}%; background: var(--primary); height: 100%;"></div>
+                                        <div style="width: {{ is_array($subject) ? $subject['completion_rate'] : $subject->completion_rate }}%; background: #216699; height: 100%;"></div>
                                     </div>
-                                    <span style="font-size: 0.8rem;">{{ $subject['completion_rate'] ?? 0 }}%</span>
+                                    <span style="font-size: 0.8rem;">{{ is_array($subject) ? $subject['completion_rate'] : $subject->completion_rate }}%</span>
                                 </div>
                             </td>
                         </tr>
@@ -234,14 +234,24 @@
     gap: 12px;
 }
 
+.grid-2 {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+}
+
 .dashboard-card {
     text-align: center;
     transition: all 0.2s ease;
+    padding: 20px;
+    background: white;
+    border-radius: 10px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
 }
 
 .dashboard-card:hover {
     transform: translateY(-4px);
-    border-color: var(--primary);
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
 }
 
 .dashboard-card-icon {
@@ -252,20 +262,18 @@
 .dashboard-card h3 {
     font-size: 0.9rem;
     font-weight: 600;
-    color: var(--muted);
+    color: #6b7280;
     margin: 0 0 8px;
     text-transform: uppercase;
-    letter-spacing: 0.5px;
 }
 
 .dashboard-card .count {
     font-size: 2.5rem;
     font-weight: 700;
-    color: var(--text);
+    color: #216699;
     margin: 8px 0;
 }
 
-/* Action Chips */
 .action-chip {
     display: inline-flex;
     align-items: center;
@@ -288,11 +296,6 @@
     text-decoration: none;
 }
 
-.action-chip span {
-    font-size: 1rem;
-}
-
-/* Activity List */
 .activity-list {
     display: flex;
     flex-direction: column;
@@ -314,7 +317,6 @@
     flex-shrink: 0;
 }
 
-/* Status Items */
 .status-list {
     display: flex;
     flex-direction: column;
@@ -333,48 +335,18 @@
     border-bottom: none;
 }
 
-.status-badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    padding: 4px 12px;
-    border-radius: 40px;
-    font-size: 0.75rem;
-    font-weight: 500;
-}
-
 .status-badge.online {
     background: #ecfdf5;
     color: #166534;
+    padding: 4px 12px;
+    border-radius: 40px;
+    font-size: 0.75rem;
 }
 
 .text-muted {
     color: #6b7280;
 }
 
-/* Responsive */
-@media (max-width: 1024px) {
-    .grid-4 {
-        grid-template-columns: repeat(2, 1fr);
-    }
-    .grid-6 {
-        grid-template-columns: repeat(3, 1fr);
-    }
-}
-
-@media (max-width: 768px) {
-    .grid-4 {
-        grid-template-columns: 1fr;
-    }
-    .grid-6 {
-        grid-template-columns: repeat(2, 1fr);
-    }
-    .grid-2 {
-        grid-template-columns: 1fr;
-    }
-}
-
-/* Table Styles */
 .table-responsive {
     overflow-x: auto;
 }
@@ -390,19 +362,10 @@ th, td {
     text-align: left;
 }
 
-th {
-    color: #6b7280;
-    font-weight: 600;
-    font-size: 0.85rem;
-}
-
-.text-center {
-    text-align: center;
-}
-
-/* Quick Actions Card */
 .quick-actions {
     background: linear-gradient(135deg, #f8fafc 0%, #ffffff 100%);
+    padding: 20px;
+    border-radius: 10px;
 }
 
 .btn-sm {
@@ -421,17 +384,23 @@ th {
     text-decoration: none;
     color: white;
 }
+
+@media (max-width: 1024px) {
+    .grid-4 { grid-template-columns: repeat(2, 1fr); }
+    .grid-6 { grid-template-columns: repeat(3, 1fr); }
+    .grid-2 { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 768px) {
+    .grid-4, .grid-6 { grid-template-columns: 1fr; }
+}
 </style>
 
 <script>
-// Live time update
 function updateLiveTime() {
     const now = new Date();
     const timeString = now.toLocaleTimeString('en-US', { 
-        hour: '2-digit', 
-        minute: '2-digit', 
-        second: '2-digit',
-        hour12: true 
+        hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true 
     });
     const timeElement = document.getElementById('liveTime');
     if (timeElement) timeElement.textContent = timeString;
