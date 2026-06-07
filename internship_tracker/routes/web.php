@@ -1,25 +1,20 @@
 <?php
 
-use App\Http\Controllers\Admin\DashboardController;  // Changed from AdminDashboardController
+use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\SubjectController;
 use App\Http\Controllers\Admin\SectionController;
-use App\Http\Controllers\Admin\EnrollmentController;
+use App\Http\Controllers\Admin\InternshipController;  // Added - changed from EnrollmentController
 use App\Http\Controllers\Admin\AttendanceController as AdminAttendanceController;
 use App\Http\Controllers\Teacher\DashboardController as TeacherDashboardController;
 use App\Http\Controllers\Teacher\StudentController as TeacherStudentController;
 use App\Http\Controllers\Student\AttendanceController as StudentAttendanceController;
-use App\Http\Controllers\Auth\RegisteredUserController;
 use Illuminate\Support\Facades\Route;
 
 // Custom login route
 Route::get('/login', function () {
     return view('auth.login');
 })->name('login');
-
-// Registration routes
-Route::get('/register', [RegisteredUserController::class, 'create'])->name('register');
-Route::post('/register', [RegisteredUserController::class, 'store'])->middleware('guest');
 
 // Default auth routes
 Route::post('/login', [App\Http\Controllers\Auth\AuthenticatedSessionController::class, 'store']);
@@ -32,22 +27,11 @@ Route::middleware(['auth'])->group(function () {
     
     // ============ ADMIN ROUTES ============
     Route::middleware(['role:admin'])->prefix('admin')->name('admin.')->group(function () {
-        // Dashboard - Using DashboardController instead of AdminDashboardController
         Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
-        
-        // User management
         Route::resource('users', UserController::class);
-        
-        // Subject management
         Route::resource('subjects', SubjectController::class);
-        
-        // Section management
         Route::resource('sections', SectionController::class);
-        
-        // Enrollment management
-        Route::resource('enrollments', EnrollmentController::class);
-        
-        // Attendance management
+        Route::resource('internships', InternshipController::class);  // Now works with the use statement
         Route::get('/attendances', [AdminAttendanceController::class, 'index'])->name('attendances.index');
         Route::get('/attendances/{attendance}', [AdminAttendanceController::class, 'show'])->name('attendances.show');
         Route::get('/students/{student}/attendance', [AdminAttendanceController::class, 'studentAttendance'])->name('students.attendance');
@@ -57,8 +41,13 @@ Route::middleware(['auth'])->group(function () {
     
     // ============ TEACHER ROUTES ============
     Route::middleware(['role:teacher'])->prefix('teacher')->name('teacher.')->group(function () {
+        // Dashboard
         Route::get('/dashboard', [TeacherDashboardController::class, 'index'])->name('dashboard');
+        
+        // Student management
         Route::get('/students', [TeacherStudentController::class, 'index'])->name('students.index');
+        Route::get('/students/create', [TeacherStudentController::class, 'create'])->name('students.create');
+        Route::post('/students', [TeacherStudentController::class, 'store'])->name('students.store');
         Route::get('/students/{student}', [TeacherStudentController::class, 'show'])->name('students.show');
     });
     
@@ -69,15 +58,6 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/attendance/timeout', [StudentAttendanceController::class, 'timeOut'])->name('attendance.timeout');
         Route::get('/history', [StudentAttendanceController::class, 'attendanceHistory'])->name('history');
     });
-    
-    // Simple dashboard routes for backward compatibility
-    Route::get('/teacher/dashboard', function () {
-        return view('teacher.dashboard');
-    })->middleware(['role:teacher'])->name('teacher.dashboard');
-    
-    Route::get('/student/dashboard', function () {
-        return view('student.dashboard');
-    })->middleware(['role:student'])->name('student.dashboard');
     
     // Single dashboard route that redirects based on role
     Route::get('/dashboard', function () {

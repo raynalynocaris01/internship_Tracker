@@ -3,7 +3,8 @@
 namespace App\Http\Controllers\Teacher;
 
 use App\Http\Controllers\Controller;
-use App\Models\StudentSubjectEnrollment;
+use App\Models\User;
+use App\Models\Internship;
 use App\Models\Attendance;
 use Carbon\Carbon;
 
@@ -13,32 +14,24 @@ class DashboardController extends Controller
     {
         $teacherId = auth()->id();
         
-        // Get students under this teacher
-        $enrollments = StudentSubjectEnrollment::where('teacher_id', $teacherId)
-            ->with(['student', 'subject', 'section'])
-            ->where('status', 'enrolled')
-            ->get();
+        // Get students under this teacher (through internships)
+        $students = User::whereHas('internships', function($q) use ($teacherId) {
+            $q->where('teacher_id', $teacherId);
+        })->with(['internships' => function($q) use ($teacherId) {
+            $q->where('teacher_id', $teacherId)->with('subject');
+        }, 'attendances'])->get();
         
-        $totalStudents = $enrollments->count();
+        // Statistics
+        $totalStudents = $students->count();
+        $activeInternships = Internship::where('teacher_id', $teacherId)
+            ->where('status', 'active')
+            ->count();
         
-        // Today's attendance for teacher's students
-        $todayAttendance = Attendance::whereIn('student_id', $enrollments->pluck('student_id'))
+        // Today's attendance
+        $todayAttendance = Attendance::whereIn('student_id', $students->pluck('id'))
             ->whereDate('date', Carbon::today())
-            ->get();
-            
-        $studentsClockedIn = $todayAttendance->whereNull('time_out')->count();
-        $completedToday = $todayAttendance->whereNotNull('time_out')->count();
+            ->count();
         
-        // Recent attendance
-        $recentAttendance = Attendance::whereIn('student_id', $enrollments->pluck('student_id'))
-            ->with(['student', 'subject'])
-            ->latest()
-            ->limit(20)
-            ->get();
-        
-        return view('teacher.dashboard', compact(
-            'enrollments', 'totalStudents', 'studentsClockedIn', 
-            'completedToday', 'recentAttendance'
-        ));
+        return view('teacher.dashboard', compact('students', 'totalStudents', 'activeInternships', 'todayAttendance'));
     }
 }

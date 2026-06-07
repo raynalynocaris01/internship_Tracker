@@ -58,8 +58,8 @@
             <a href="{{ route('admin.users.create') }}?role=student" class="action-chip">
                 <span>👨‍🎓</span> Add Student
             </a>
-            <a href="{{ route('admin.enrollments.create') }}" class="action-chip">
-                <span>📋</span> Enroll Student
+            <a href="{{ route('admin.internships.create') }}" class="action-chip">
+                <span>📋</span> Assign Internship
             </a>
             <a href="{{ route('admin.attendances.index') }}" class="action-chip">
                 <span>📊</span> View Reports
@@ -80,7 +80,6 @@
                     <div class="activity-item">
                         <div class="activity-dot"></div>
                         <div>
-                            {{-- FIXED: Check if activity is array or object --}}
                             <p style="margin: 0 0 4px;">{{ is_array($activity) ? $activity['description'] : $activity->description }}</p>
                             <span class="text-muted" style="font-size: 0.75rem;">{{ is_array($activity) ? $activity['time'] : $activity->created_at->diffForHumans() }}</span>
                         </div>
@@ -132,8 +131,12 @@
                     <span>{{ app()->version() }}</span>
                 </div>
                 <div class="status-item">
-                    <span>Total Enrolled Students</span>
-                    <span>{{ $totalEnrolled ?? 0 }}</span>
+                    <span>Active Internships</span>
+                    <span>{{ $totalActive ?? 0 }}</span>  <!-- Changed from totalEnrolled -->
+                </div>
+                <div class="status-item">
+                    <span>Completed Internships</span>
+                    <span>{{ $totalCompleted ?? 0 }}</span>  <!-- Added -->
                 </div>
                 <div class="status-item">
                     <span>Current Time</span>
@@ -148,7 +151,7 @@
         <!-- Top Subjects -->
         <div class="card">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                <h2 style="font-size: 1.2rem;">Top Subjects by Enrollment</h2>
+                <h2 style="font-size: 1.2rem;">Top Subjects by Internships</h2>  <!-- Changed from "Enrollment" -->
                 <a href="{{ route('admin.subjects.index') }}" class="text-muted" style="font-size: 0.85rem;">Manage →</a>
             </div>
             <div class="table-responsive">
@@ -156,7 +159,7 @@
                     <thead>
                         <tr>
                             <th>Subject</th>
-                            <th>Students</th>
+                            <th>Active Internships</th>  <!-- Changed from "Students" -->
                             <th>Completion</th>
                         </tr>
                     </thead>
@@ -164,7 +167,7 @@
                         @forelse($topSubjects ?? [] as $subject)
                         <tr>
                             <td>{{ is_array($subject) ? $subject['name'] : $subject->name }}</td>
-                            <td>{{ is_array($subject) ? $subject['student_count'] : $subject->student_count }}</td>
+                            <td>{{ is_array($subject) ? $subject['student_count'] : $subject->student_count }}</p>
                             <td>
                                 <div style="display: flex; align-items: center; gap: 8px;">
                                     <div style="flex: 1; background: #e5e7eb; border-radius: 999px; height: 6px; overflow: hidden;">
@@ -172,15 +175,15 @@
                                     </div>
                                     <span style="font-size: 0.8rem;">{{ is_array($subject) ? $subject['completion_rate'] : $subject->completion_rate }}%</span>
                                 </div>
-                            </td>
+                            </p>
                         </tr>
                         @empty
                             <tr>
-                                <td colspan="3" class="text-center text-muted" style="padding: 40px;">No data available</td>
+                                <td colspan="3" class="text-center text-muted" style="padding: 40px;">No data available</p>
                             </tr>
                         @endforelse
                     </tbody>
-                </table>
+                </div>
             </div>
         </div>
 
@@ -203,22 +206,23 @@
                     <tbody>
                         @forelse($recentStudents ?? [] as $student)
                         <tr>
-                            <td>{{ $student->name }}</td>
-                            <td>{{ $student->student_id }}</td>
-                            <td>{{ $student->course }}</td>
-                            <td>{{ $student->created_at->format('M d, Y') }}</td>
+                            <td>{{ $student->name }}</p>
+                            <td>{{ $student->student_id }}</p>
+                            <td>{{ $student->course }}</p>
+                            <td>{{ $student->created_at->format('M d, Y') }}</p>
                         </tr>
                         @empty
                             <tr>
-                                <td colspan="4" class="text-center text-muted" style="padding: 40px;">No students added yet</td>
+                                <td colspan="4" class="text-center text-muted" style="padding: 40px;">No students added yet</p>
                             </tr>
                         @endforelse
                     </tbody>
-                </table>
+                </div>
             </div>
         </div>
     </div>
 </div>
+
 
 <style>
 /* Dashboard Specific Styles */

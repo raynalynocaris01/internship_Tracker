@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Models\StudentQRCode;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -26,8 +27,8 @@ class RegisteredUserController extends Controller
             'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:'.User::class],
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
             'role' => ['required', 'in:student,teacher'],
-            'student_id' => ['required_if:role,student', 'nullable', 'string', 'unique:users'],
-            'teacher_id' => ['required_if:role,teacher', 'nullable', 'string', 'unique:users'],  // Changed from employee_id
+            'student_id' => ['required_if:role,student', 'nullable', 'string', 'unique:users,student_id'],
+            'teacher_id' => ['required_if:role,teacher', 'nullable', 'string', 'unique:users,teacher_id'],
             'course' => ['required_if:role,student', 'nullable', 'string'],
             'year_level' => ['required_if:role,student', 'nullable', 'integer', 'min:1', 'max:4'],
             'department' => ['nullable', 'string'],
@@ -47,10 +48,20 @@ class RegisteredUserController extends Controller
             $userData['course'] = $request->course;
             $userData['year_level'] = $request->year_level;
         } elseif ($request->role === 'teacher') {
-            $userData['teacher_id'] = $request->teacher_id;  // Changed from employee_id
+            $userData['teacher_id'] = $request->teacher_id;
         }
 
+        // Create the user
         $user = User::create($userData);
+
+        // If user is a student, generate QR code automatically
+        if ($user->isStudent()) {
+            StudentQRCode::create([
+                'student_id' => $user->id,
+                'qr_code' => $this->generateUniqueQRCode(),
+                'status' => 'active'
+            ]);
+        }
 
         event(new Registered($user));
 
@@ -58,9 +69,21 @@ class RegisteredUserController extends Controller
 
         // Redirect based on role
         return match($user->role) {
-            'admin' => redirect()->route('admin.dashboard'),
-            'teacher' => redirect()->route('teacher.dashboard'),
-            default => redirect()->route('student.dashboard'),
+            'admin' => redirect()->route('admin.dashboard')->with('success', 'Welcome to the Internship Tracker System!'),
+            'teacher' => redirect()->route('teacher.dashboard')->with('success', 'Welcome to the Internship Tracker System!'),
+            default => redirect()->route('student.dashboard')->with('success', 'Welcome to the Internship Tracker System! Your QR code has been generated.'),
         };
+    }
+
+    /**
+     * Generate unique QR code for student
+     */
+    private function generateUniqueQRCode(): string
+    {
+        do {
+            $code = 'STU_' . strtoupper(uniqid());
+        } while (StudentQRCode::where('qr_code', $code)->exists());
+        
+        return $code;
     }
 }

@@ -15,7 +15,7 @@ class Attendance extends Model
     protected $fillable = [
         'student_id',
         'subject_id',
-        'enrollment_id',
+        'internship_id',  // Changed from 'enrollment_id'
         'date',
         'time_in',
         'time_out',
@@ -49,9 +49,10 @@ class Attendance extends Model
         return $this->belongsTo(Subject::class);
     }
 
-    public function enrollment()
+    // Changed from enrollment() to internship()
+    public function internship()
     {
-        return $this->belongsTo(StudentSubjectEnrollment::class, 'enrollment_id');
+        return $this->belongsTo(Internship::class, 'internship_id');
     }
 
     // Scopes
@@ -84,17 +85,17 @@ class Attendance extends Model
     // Accessors
     public function getTimeInFormattedAttribute()
     {
-        return $this->time_in ? $this->time_in->format('h:i A') : null;
+        return $this->time_in ? Carbon::parse($this->time_in)->format('h:i A') : null;
     }
 
     public function getTimeOutFormattedAttribute()
     {
-        return $this->time_out ? $this->time_out->format('h:i A') : null;
+        return $this->time_out ? Carbon::parse($this->time_out)->format('h:i A') : null;
     }
 
     public function getDateFormattedAttribute()
     {
-        return $this->date->format('F d, Y');
+        return $this->date ? Carbon::parse($this->date)->format('F d, Y') : null;
     }
 
     public function getStatusBadgeAttribute()
@@ -109,13 +110,25 @@ class Attendance extends Model
         return $badges[$this->status] ?? 'secondary';
     }
 
+    public function getStatusLabelAttribute()
+    {
+        $labels = [
+            self::STATUS_PRESENT => 'Present',
+            self::STATUS_ABSENT => 'Absent',
+            self::STATUS_LATE => 'Late',
+            self::STATUS_HALF_DAY => 'Half Day'
+        ];
+        
+        return $labels[$this->status] ?? ucfirst($this->status);
+    }
+
     // Helper Methods
     public function calculateHours()
     {
         if ($this->time_in && $this->time_out) {
-            $timeIn = strtotime($this->time_in);
-            $timeOut = strtotime($this->time_out);
-            $diffInSeconds = $timeOut - $timeIn;
+            $timeIn = Carbon::parse($this->time_in);
+            $timeOut = Carbon::parse($this->time_out);
+            $diffInSeconds = $timeOut->diffInSeconds($timeIn);
             
             // Calculate hours
             $hours = $diffInSeconds / 3600;
@@ -128,9 +141,9 @@ class Attendance extends Model
             $this->hours_worked = round($hours, 2);
             $this->save();
             
-            // Update enrollment total hours
-            if ($this->enrollment) {
-                $this->enrollment->updateTotalHours();
+            // Update internship total hours (changed from enrollment)
+            if ($this->internship) {
+                $this->internship->updateTotalHours();
             }
         }
         
@@ -163,9 +176,10 @@ class Attendance extends Model
             return false;
         }
         
-        // Get late cutoff time from settings (default 8:30 AM)
+        $timeIn = Carbon::parse($this->time_in);
+        // Get late cutoff time (default 8:30 AM)
         $cutoffTime = Carbon::parse($this->date->format('Y-m-d') . ' 08:30:00');
-        return $this->time_in->gt($cutoffTime);
+        return $timeIn->gt($cutoffTime);
     }
 
     public function updateStatus()
@@ -178,5 +192,11 @@ class Attendance extends Model
             $this->status = self::STATUS_PRESENT;
         }
         $this->save();
+    }
+
+    // Additional helper: Get the subject through internship
+    public function getSubjectThroughInternship()
+    {
+        return $this->internship ? $this->internship->subject : null;
     }
 }

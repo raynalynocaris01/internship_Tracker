@@ -5,7 +5,7 @@
 
 @section('content')
 <div class="container">
-    @if(isset($noEnrollment) && $noEnrollment)
+    @if(isset($noInternship) && $noInternship)
         <div class="alert alert-warning">
             <i class="fas fa-exclamation-triangle"></i> {{ $message }}
         </div>
@@ -53,8 +53,8 @@
                         <div class="card text-white bg-warning">
                             <div class="card-header">Subject</div>
                             <div class="card-body">
-                                <h5 class="card-title">{{ $enrollment->subject->code }}</h5>
-                                <p class="card-text">{{ $enrollment->subject->name }}</p>
+                                <h5 class="card-title">{{ $internship->subject->code }}</h5>  <!-- Changed from $enrollment -->
+                                <p class="card-text">{{ $internship->subject->name }}</p>  <!-- Changed from $enrollment -->
                                 <p class="card-text">Days Rendered: {{ $totalDays }}</p>
                             </div>
                         </div>

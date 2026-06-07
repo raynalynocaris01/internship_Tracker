@@ -10,7 +10,7 @@ class SectionController extends Controller
 {
     public function index()
     {
-        $sections = Section::withCount('enrollments')
+        $sections = Section::withCount('internships')  // Changed from 'enrollments'
             ->latest()
             ->paginate(15);
         return view('admin.sections.index', compact('sections'));
@@ -40,7 +40,7 @@ class SectionController extends Controller
 
     public function show(Section $section)
     {
-        $section->load(['enrollments.student', 'subjects']);
+        $section->load(['internships.student', 'subjects']);  // Changed from 'enrollments.student'
         return view('admin.sections.show', compact('section'));
     }
 
@@ -68,9 +68,10 @@ class SectionController extends Controller
 
     public function destroy(Section $section)
     {
-        if ($section->enrollments()->count() > 0) {
+        // Check if section has any internships (students assigned)
+        if ($section->internships()->count() > 0) {  // Changed from 'enrollments'
             return redirect()->route('admin.sections.index')
-                ->with('error', 'Cannot delete section with enrolled students.');
+                ->with('error', 'Cannot delete section with assigned internships.');
         }
         
         $section->delete();

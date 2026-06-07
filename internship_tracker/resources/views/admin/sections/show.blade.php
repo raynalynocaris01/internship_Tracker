@@ -5,8 +5,10 @@
 @section('content')
 <div class="container">
     <div class="card">
-        <div class="card-header">
-            <h3>Section Details: {{ $section->name }}</h3>
+        <div class="card-header" style="background-color: #216699; color: white;">
+            <h4 class="mb-0">
+                <i class="fas fa-info-circle"></i> Section Details: {{ $section->name }}
+            </h4>
         </div>
         <div class="card-body">
             <div class="row">
@@ -33,14 +35,14 @@
                             <td>{{ $section->max_students }}</td>
                         </tr>
                         <tr>
-                            <th>Current Enrollment</th>
-                            <td>{{ $section->enrollments_count ?? 0 }}</td>
+                            <th>Active Internships</th>
+                            <td>{{ $section->internships_count ?? 0 }}</td>  <!-- Changed -->
                         </tr>
                         <tr>
                             <th>Available Slots</th>
                             <td>
                                 @php
-                                    $available = $section->max_students - ($section->enrollments_count ?? 0);
+                                    $available = $section->max_students - ($section->internships_count ?? 0);
                                 @endphp
                                 @if($available > 0)
                                     <span class="badge bg-success">{{ $available }} slots available</span>
@@ -63,15 +65,17 @@
                             <th>Created At</th>
                             <td>{{ $section->created_at->format('F d, Y h:i A') }}</td>
                         </tr>
-                    </table>
+                    vat
                 </div>
                 <div class="col-md-6">
                     <div class="card">
-                        <div class="card-header">
-                            <h5>Enrolled Students</h5>
+                        <div class="card-header" style="background-color: #28a745; color: white;">
+                            <h5 class="mb-0">
+                                <i class="fas fa-briefcase"></i> Students with Internships
+                            </h5>
                         </div>
                         <div class="card-body">
-                            @if($section->enrollments && $section->enrollments->count() > 0)
+                            @if($section->internships && $section->internships->count() > 0)
                                 <div class="table-responsive">
                                     <table class="table table-sm">
                                         <thead>
@@ -80,29 +84,48 @@
                                                 <th>Student ID</th>
                                                 <th>Subject</th>
                                                 <th>Status</th>
+                                                <th>Progress</th>
                                             </tr>
                                         </thead>
                                         <tbody>
-                                            @foreach($section->enrollments->take(10) as $enrollment)
+                                            @foreach($section->internships->take(10) as $internship)
                                             <tr>
-                                                <td>{{ $enrollment->student->name ?? 'N/A' }}</td>
-                                                <td>{{ $enrollment->student->student_id ?? 'N/A' }}</td>
-                                                <td>{{ $enrollment->subject->code ?? 'N/A' }}</td>
+                                                <td>{{ $internship->student->name ?? 'N/A' }}</td>
+                                                <td>{{ $internship->student->student_id ?? 'N/A' }}</td>
+                                                <td>{{ $internship->subject->code ?? 'N/A' }}</td>
                                                 <td>
-                                                    <span class="badge bg-{{ $enrollment->status == 'enrolled' ? 'success' : 'secondary' }}">
-                                                        {{ ucfirst($enrollment->status) }}
-                                                    </span>
+                                                    @if($internship->status == 'active')
+                                                        <span class="badge bg-success">Active</span>
+                                                    @elseif($internship->status == 'completed')
+                                                        <span class="badge bg-info">Completed</span>
+                                                    @elseif($internship->status == 'pending')
+                                                        <span class="badge bg-warning">Pending</span>
+                                                    @else
+                                                        <span class="badge bg-danger">Dropped</span>
+                                                    @endif
+                                                </td>
+                                                <td>
+                                                    <div class="progress" style="height: 15px; width: 80px;">
+                                                        <div class="progress-bar bg-success" style="width: {{ $internship->progress }}%"></div>
+                                                    </div>
+                                                    <small>{{ number_format($internship->progress, 1) }}%</small>
                                                 </td>
                                             </tr>
                                             @endforeach
                                         </tbody>
                                     </table>
-                                    @if($section->enrollments->count() > 10)
-                                        <small class="text-muted">Showing 10 of {{ $section->enrollments->count() }} students</small>
+                                    @if($section->internships->count() > 10)
+                                        <small class="text-muted">Showing 10 of {{ $section->internships->count() }} students</small>
                                     @endif
                                 </div>
                             @else
-                                <p class="text-muted">No students enrolled in this section yet.</p>
+                                <div class="text-center py-3">
+                                    <i class="fas fa-briefcase fa-2x text-muted mb-2"></i>
+                                    <p class="text-muted">No students assigned to this section yet.</p>
+                                    <a href="{{ route('admin.internships.create') }}" class="btn btn-sm btn-primary">
+                                        Assign Internship
+                                    </a>
+                                </div>
                             @endif
                         </div>
                     </div>
@@ -110,8 +133,12 @@
             </div>
 
             <div class="mt-4">
-                <a href="{{ route('admin.sections.index') }}" class="btn btn-secondary">Back</a>
-                <a href="{{ route('admin.sections.edit', $section) }}" class="btn btn-warning">Edit</a>
+                <a href="{{ route('admin.sections.index') }}" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left"></i> Back
+                </a>
+                <a href="{{ route('admin.sections.edit', $section) }}" class="btn btn-warning">
+                    <i class="fas fa-edit"></i> Edit
+                </a>
             </div>
         </div>
     </div>

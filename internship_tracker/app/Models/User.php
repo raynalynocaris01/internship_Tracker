@@ -48,15 +48,27 @@ class User extends Authenticatable
         return $this->role === 'student';
     }
 
-    // Relationships
+    // Relationships - Updated for students
+    public function internships()
+    {
+        return $this->hasMany(Internship::class, 'student_id');
+    }
+
+    // Relationships - Updated for teachers
+    public function supervisedInternships()
+    {
+        return $this->hasMany(Internship::class, 'teacher_id');
+    }
+
+    // Keep old names for backward compatibility (optional)
     public function studentEnrollments()
     {
-        return $this->hasMany(StudentSubjectEnrollment::class, 'student_id');
+        return $this->internships();
     }
 
     public function teachingEnrollments()
     {
-        return $this->hasMany(StudentSubjectEnrollment::class, 'teacher_id');
+        return $this->supervisedInternships();
     }
 
     public function subjectSections()
@@ -106,11 +118,42 @@ class User extends Authenticatable
         return $this->attendances()->count();
     }
 
-    public function getCurrentEnrollmentAttribute()
+    // Updated to use internships
+    public function getCurrentInternshipAttribute()
     {
-        return $this->studentEnrollments()
-            ->where('status', 'enrolled')
+        return $this->internships()
+            ->where('status', 'active')
             ->with('subject')
             ->first();
+    }
+
+    // Keep old name for backward compatibility
+    public function getCurrentEnrollmentAttribute()
+    {
+        return $this->getCurrentInternshipAttribute();
+    }
+
+    // Get active internship (alias)
+    public function getActiveInternshipAttribute()
+    {
+        return $this->getCurrentInternshipAttribute();
+    }
+
+    // Get all internships for the student
+    public function getAllInternshipsAttribute()
+    {
+        return $this->internships()->with('subject')->get();
+    }
+
+    // Get student's total internship hours across all internships
+    public function getTotalInternshipHoursAttribute()
+    {
+        return $this->internships()->sum('total_hours_rendered');
+    }
+
+    // Get student's completion status
+    public function getHasCompletedInternshipAttribute()
+    {
+        return $this->internships()->where('status', 'completed')->exists();
     }
 }

@@ -1,39 +1,55 @@
 {{-- resources/views/auth/register.blade.php --}}
 @extends('layouts.app')
 
+@section('title', 'Register')
+
 @section('content')
 <div class="container">
     <div class="row justify-content-center">
         <div class="col-md-8">
             <div class="card">
-                <div class="card-header">{{ __('Register') }}</div>
+                <div class="card-header text-white" style="background-color: #216699;">
+                    <h4 class="mb-0">{{ __('Create New Account') }}</h4>
+                </div>
 
                 <div class="card-body">
+                    @if ($errors->any())
+                        <div class="alert alert-danger">
+                            <ul class="mb-0">
+                                @foreach ($errors->all() as $error)
+                                    <li>{{ $error }}</li>
+                                @endforeach
+                            </ul>
+                        </div>
+                    @endif
+
                     <form method="POST" action="{{ route('register') }}">
                         @csrf
 
                         <div class="row mb-3">
-                            <label for="name" class="col-md-4 col-form-label text-md-end">{{ __('Full Name') }}</label>
+                            <label for="name" class="col-md-4 col-form-label text-md-end">{{ __('Full Name') }} <span class="text-danger">*</span></label>
                             <div class="col-md-6">
-                                <input id="name" type="text" class="form-control @error('name') is-invalid @enderror" name="name" value="{{ old('name') }}" required autofocus>
+                                <input id="name" type="text" class="form-control @error('name') is-invalid @enderror" 
+                                       name="name" value="{{ old('name') }}" required autofocus>
                                 @error('name')
-                                    <span class="invalid-feedback" role="alert"><strong>{{ $message }}</strong></span>
+                                    <span class="invalid-feedback" role="alert">{{ $message }}</span>
                                 @enderror
                             </div>
                         </div>
 
                         <div class="row mb-3">
-                            <label for="email" class="col-md-4 col-form-label text-md-end">{{ __('Email Address') }}</label>
+                            <label for="email" class="col-md-4 col-form-label text-md-end">{{ __('Email Address') }} <span class="text-danger">*</span></label>
                             <div class="col-md-6">
-                                <input id="email" type="email" class="form-control @error('email') is-invalid @enderror" name="email" value="{{ old('email') }}" required>
+                                <input id="email" type="email" class="form-control @error('email') is-invalid @enderror" 
+                                       name="email" value="{{ old('email') }}" required>
                                 @error('email')
-                                    <span class="invalid-feedback" role="alert"><strong>{{ $message }}</strong></span>
+                                    <span class="invalid-feedback" role="alert">{{ $message }}</span>
                                 @enderror
                             </div>
                         </div>
 
                         <div class="row mb-3">
-                            <label for="role" class="col-md-4 col-form-label text-md-end">{{ __('Register As') }}</label>
+                            <label for="role" class="col-md-4 col-form-label text-md-end">{{ __('Register As') }} <span class="text-danger">*</span></label>
                             <div class="col-md-6">
                                 <select id="role" class="form-control @error('role') is-invalid @enderror" name="role" required>
                                     <option value="">Select Role</option>
@@ -41,7 +57,7 @@
                                     <option value="teacher" {{ old('role') == 'teacher' ? 'selected' : '' }}>Teacher</option>
                                 </select>
                                 @error('role')
-                                    <span class="invalid-feedback" role="alert"><strong>{{ $message }}</strong></span>
+                                    <span class="invalid-feedback" role="alert">{{ $message }}</span>
                                 @enderror
                             </div>
                         </div>
@@ -49,18 +65,19 @@
                         {{-- Student Fields --}}
                         <div id="studentFields" class="role-fields" style="display: none;">
                             <div class="row mb-3">
-                                <label for="student_id" class="col-md-4 col-form-label text-md-end">{{ __('Student ID') }}</label>
+                                <label for="student_id" class="col-md-4 col-form-label text-md-end">{{ __('Student ID') }} <span class="text-danger">*</span></label>
                                 <div class="col-md-6">
-                                    <input id="student_id" type="text" class="form-control @error('student_id') is-invalid @enderror" name="student_id" value="{{ old('student_id') }}" placeholder="e.g., 2024001">
-                                    <small class="form-text text-muted">Enter your student ID number</small>
+                                    <input id="student_id" type="text" class="form-control @error('student_id') is-invalid @enderror" 
+                                           name="student_id" value="{{ old('student_id') }}" placeholder="e.g., 2024-001">
+                                    <small class="text-muted">Enter your official student ID number</small>
                                     @error('student_id')
-                                        <span class="invalid-feedback" role="alert"><strong>{{ $message }}</strong></span>
+                                        <span class="invalid-feedback" role="alert">{{ $message }}</span>
                                     @enderror
                                 </div>
                             </div>
 
                             <div class="row mb-3">
-                                <label for="course" class="col-md-4 col-form-label text-md-end">{{ __('Course') }}</label>
+                                <label for="course" class="col-md-4 col-form-label text-md-end">{{ __('Course') }} <span class="text-danger">*</span></label>
                                 <div class="col-md-6">
                                     <select id="course" class="form-control @error('course') is-invalid @enderror" name="course">
                                         <option value="">Select Course</option>
@@ -70,13 +87,13 @@
                                         <option value="BSECE" {{ old('course') == 'BSECE' ? 'selected' : '' }}>BS Electronics Engineering</option>
                                     </select>
                                     @error('course')
-                                        <span class="invalid-feedback" role="alert"><strong>{{ $message }}</strong></span>
+                                        <span class="invalid-feedback" role="alert">{{ $message }}</span>
                                     @enderror
                                 </div>
                             </div>
 
                             <div class="row mb-3">
-                                <label for="year_level" class="col-md-4 col-form-label text-md-end">{{ __('Year Level') }}</label>
+                                <label for="year_level" class="col-md-4 col-form-label text-md-end">{{ __('Year Level') }} <span class="text-danger">*</span></label>
                                 <div class="col-md-6">
                                     <select id="year_level" class="form-control @error('year_level') is-invalid @enderror" name="year_level">
                                         <option value="">Select Year Level</option>
@@ -86,7 +103,7 @@
                                         <option value="4" {{ old('year_level') == '4' ? 'selected' : '' }}>4th Year</option>
                                     </select>
                                     @error('year_level')
-                                        <span class="invalid-feedback" role="alert"><strong>{{ $message }}</strong></span>
+                                        <span class="invalid-feedback" role="alert">{{ $message }}</span>
                                     @enderror
                                 </div>
                             </div>
@@ -95,12 +112,13 @@
                         {{-- Teacher Fields --}}
                         <div id="teacherFields" class="role-fields" style="display: none;">
                             <div class="row mb-3">
-                                <label for="teacher_id" class="col-md-4 col-form-label text-md-end">{{ __('Teacher ID') }}</label>
+                                <label for="teacher_id" class="col-md-4 col-form-label text-md-end">{{ __('Teacher ID') }} <span class="text-danger">*</span></label>
                                 <div class="col-md-6">
-                                    <input id="teacher_id" type="text" class="form-control @error('teacher_id') is-invalid @enderror" name="teacher_id" value="{{ old('teacher_id') }}" placeholder="e.g., 1001">
-                                    <small class="form-text text-muted">Enter your teacher ID number</small>
+                                    <input id="teacher_id" type="text" class="form-control @error('teacher_id') is-invalid @enderror" 
+                                           name="teacher_id" value="{{ old('teacher_id') }}" placeholder="e.g., TCH-2024-001">
+                                    <small class="text-muted">Enter your official teacher ID number</small>
                                     @error('teacher_id')
-                                        <span class="invalid-feedback" role="alert"><strong>{{ $message }}</strong></span>
+                                        <span class="invalid-feedback" role="alert">{{ $message }}</span>
                                     @enderror
                                 </div>
                             </div>
@@ -115,26 +133,28 @@
                                     <option value="Information Technology" {{ old('department') == 'Information Technology' ? 'selected' : '' }}>Information Technology</option>
                                     <option value="Engineering" {{ old('department') == 'Engineering' ? 'selected' : '' }}>Engineering</option>
                                     <option value="Business" {{ old('department') == 'Business' ? 'selected' : '' }}>Business</option>
+                                    <option value="Arts and Sciences" {{ old('department') == 'Arts and Sciences' ? 'selected' : '' }}>Arts and Sciences</option>
                                 </select>
                                 @error('department')
-                                    <span class="invalid-feedback" role="alert"><strong>{{ $message }}</strong></span>
+                                    <span class="invalid-feedback" role="alert">{{ $message }}</span>
                                 @enderror
                             </div>
                         </div>
 
                         <div class="row mb-3">
-                            <label for="password" class="col-md-4 col-form-label text-md-end">{{ __('Password') }}</label>
+                            <label for="password" class="col-md-4 col-form-label text-md-end">{{ __('Password') }} <span class="text-danger">*</span></label>
                             <div class="col-md-6">
-                                <input id="password" type="password" class="form-control @error('password') is-invalid @enderror" name="password" required>
-                                <small class="form-text text-muted">Password must be at least 8 characters</small>
+                                <input id="password" type="password" class="form-control @error('password') is-invalid @enderror" 
+                                       name="password" required>
+                                <small class="text-muted">Password must be at least 8 characters</small>
                                 @error('password')
-                                    <span class="invalid-feedback" role="alert"><strong>{{ $message }}</strong></span>
+                                    <span class="invalid-feedback" role="alert">{{ $message }}</span>
                                 @enderror
                             </div>
                         </div>
 
                         <div class="row mb-3">
-                            <label for="password-confirm" class="col-md-4 col-form-label text-md-end">{{ __('Confirm Password') }}</label>
+                            <label for="password-confirm" class="col-md-4 col-form-label text-md-end">{{ __('Confirm Password') }} <span class="text-danger">*</span></label>
                             <div class="col-md-6">
                                 <input id="password-confirm" type="password" class="form-control" name="password_confirmation" required>
                             </div>
@@ -142,9 +162,12 @@
 
                         <div class="row mb-0">
                             <div class="col-md-6 offset-md-4">
-                                <button type="submit" class="btn btn-primary">
-                                    {{ __('Register') }}
+                                <button type="submit" class="btn btn-primary" style="background-color: #216699; border-color: #216699;">
+                                    <i class="fas fa-user-plus"></i> {{ __('Register') }}
                                 </button>
+                                <a href="{{ route('login') }}" class="btn btn-link">
+                                    {{ __('Already have an account? Login') }}
+                                </a>
                             </div>
                         </div>
                     </form>
@@ -154,41 +177,63 @@
     </div>
 </div>
 
-<script>
-document.getElementById('role').addEventListener('change', function() {
-    const studentFields = document.getElementById('studentFields');
-    const teacherFields = document.getElementById('teacherFields');
-    
-    // Hide both first
-    studentFields.style.display = 'none';
-    teacherFields.style.display = 'none';
-    
-    // Show based on selected role
-    if (this.value === 'student') {
-        studentFields.style.display = 'block';
-        // Make student fields required
-        document.getElementById('student_id').required = true;
-        document.getElementById('course').required = true;
-        document.getElementById('year_level').required = true;
-        // Remove teacher field requirements
-        document.getElementById('teacher_id').required = false;
-    } else if (this.value === 'teacher') {
-        teacherFields.style.display = 'block';
-        // Make teacher fields required
-        document.getElementById('teacher_id').required = true;
-        // Remove student field requirements
-        document.getElementById('student_id').required = false;
-        document.getElementById('course').required = false;
-        document.getElementById('year_level').required = false;
+<style>
+    .role-fields {
+        border-left: 3px solid #216699;
+        padding-left: 15px;
+        margin-bottom: 10px;
+        background-color: #f8f9fa;
+        border-radius: 5px;
     }
-});
+    .text-danger {
+        color: #dc3545 !important;
+    }
+    .card-header {
+        background-color: #216699;
+        border-bottom: 2px solid #ede432;
+    }
+</style>
 
-// Trigger change on page load if role is pre-selected
+<script>
 document.addEventListener('DOMContentLoaded', function() {
     const roleSelect = document.getElementById('role');
-    if (roleSelect.value) {
-        roleSelect.dispatchEvent(new Event('change'));
+    const studentFields = document.getElementById('studentFields');
+    const teacherFields = document.getElementById('teacherFields');
+    const studentIdInput = document.getElementById('student_id');
+    const courseSelect = document.getElementById('course');
+    const yearLevelSelect = document.getElementById('year_level');
+    const teacherIdInput = document.getElementById('teacher_id');
+    
+    function toggleRoleFields() {
+        const selectedRole = roleSelect.value;
+        
+        // Hide all role-specific fields first
+        studentFields.style.display = 'none';
+        teacherFields.style.display = 'none';
+        
+        // Reset required attributes
+        if (studentIdInput) studentIdInput.required = false;
+        if (courseSelect) courseSelect.required = false;
+        if (yearLevelSelect) yearLevelSelect.required = false;
+        if (teacherIdInput) teacherIdInput.required = false;
+        
+        // Show and set required based on selected role
+        if (selectedRole === 'student') {
+            studentFields.style.display = 'block';
+            if (studentIdInput) studentIdInput.required = true;
+            if (courseSelect) courseSelect.required = true;
+            if (yearLevelSelect) yearLevelSelect.required = true;
+        } else if (selectedRole === 'teacher') {
+            teacherFields.style.display = 'block';
+            if (teacherIdInput) teacherIdInput.required = true;
+        }
     }
+    
+    // Initial call
+    toggleRoleFields();
+    
+    // Add event listener
+    roleSelect.addEventListener('change', toggleRoleFields);
 });
 </script>
 @endsection

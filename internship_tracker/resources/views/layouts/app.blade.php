@@ -124,9 +124,9 @@
                        href="{{ route('admin.sections.index') }}">
                         <i class="fas fa-users"></i> Sections
                     </a>
-                    <a class="nav-link {{ request()->routeIs('admin.enrollments.*') ? 'active' : '' }}" 
-                       href="{{ route('admin.enrollments.index') }}">
-                        <i class="fas fa-user-graduate"></i> Enrollments
+                    <a class="nav-link {{ request()->routeIs('admin.internships.*') ? 'active' : '' }}" 
+                       href="{{ route('admin.internships.index') }}">
+                        <i class="fas fa-briefcase"></i> Internships  <!-- Fixed: uppercase I, changed icon -->
                     </a>
                     <a class="nav-link {{ request()->routeIs('admin.attendances.*') ? 'active' : '' }}" 
                        href="{{ route('admin.attendances.index') }}">

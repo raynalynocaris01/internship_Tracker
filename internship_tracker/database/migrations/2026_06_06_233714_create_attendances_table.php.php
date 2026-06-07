@@ -1,6 +1,6 @@
-// database/migrations/2024_01_01_000007_create_attendances_table.php
 <?php
 
+// database/migrations/2024_01_01_000007_create_attendances_table.php
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
@@ -13,7 +13,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('student_id')->constrained('users')->onDelete('cascade');
             $table->foreignId('subject_id')->constrained()->onDelete('cascade');
-            $table->foreignId('enrollment_id')->constrained('student_subject_enrollments')->onDelete('cascade');
+            $table->foreignId('internship_id')->constrained('internships')->onDelete('cascade');  // Changed from enrollment_id
             $table->date('date');
             $table->time('time_in');
             $table->time('time_out')->nullable();
@@ -23,10 +23,11 @@ return new class extends Migration
             $table->text('notes')->nullable();
             $table->timestamps();
             
-            // One attendance per student per subject per day
-            $table->unique(['student_id', 'subject_id', 'date'], 'unique_daily_attendance');
+            // One attendance per student per day (simplified)
+            $table->unique(['student_id', 'date'], 'unique_daily_attendance');
             $table->index(['date', 'status']);
-            $table->index(['subject_id', 'date']);
+            $table->index(['internship_id', 'date']);  // Changed from subject_id to internship_id
+            $table->index(['student_id', 'internship_id']);
         });
     }
 

@@ -6,7 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Models\Subject;
 use App\Models\Section;
-use App\Models\StudentSubjectEnrollment;
+use App\Models\Internship;  // Changed from StudentSubjectEnrollment
 use App\Models\Attendance;
 use App\Models\ActivityLog;
 use Carbon\Carbon;
@@ -16,14 +16,14 @@ class DashboardController extends Controller
 {
     public function index()
     {
-        // Fetch all data efficiently using a single query where possible
+        // Fetch all data efficiently
         $stats = [
             'totalTeachers' => User::where('role', 'teacher')->count(),
             'totalStudents' => User::where('role', 'student')->count(),
             'totalSubjects' => Subject::count(),
             'totalSections' => Section::count(),
-            'totalEnrolled' => StudentSubjectEnrollment::where('status', 'enrolled')->count(),
-            'totalCompleted' => StudentSubjectEnrollment::where('status', 'completed')->count(),
+            'totalActive' => Internship::where('status', 'active')->count(),      // Changed
+            'totalCompleted' => Internship::where('status', 'completed')->count(), // Changed
         ];
         
         // Today's attendance stats
@@ -38,22 +38,22 @@ class DashboardController extends Controller
             ->limit(5)
             ->get();
         
-        // Top subjects with enrollment and completion rates
-        $topSubjects = Subject::withCount('enrollments')
-            ->with(['enrollments' => function($query) {
+        // Top subjects with internship and completion rates
+        $topSubjects = Subject::withCount('internships')  // Changed from 'enrollments'
+            ->with(['internships' => function($query) {  // Changed from 'enrollments'
                 $query->select('subject_id', DB::raw('COUNT(*) as completed_count'))
                     ->where('status', 'completed')
                     ->groupBy('subject_id');
             }])
-            ->orderBy('enrollments_count', 'desc')
+            ->orderBy('internships_count', 'desc')  // Changed from 'enrollments_count'
             ->limit(5)
             ->get()
             ->map(function($subject) {
                 return (object)[
                     'name' => $subject->code . ' - ' . $subject->name,
-                    'student_count' => $subject->enrollments_count,
-                    'completion_rate' => $subject->enrollments_count > 0 
-                        ? round(($subject->enrollments->first()->completed_count ?? 0) / $subject->enrollments_count * 100, 2)
+                    'student_count' => $subject->internships_count,  // Changed
+                    'completion_rate' => $subject->internships_count > 0 
+                        ? round(($subject->internships->first()->completed_count ?? 0) / $subject->internships_count * 100, 2)
                         : 0
                 ];
             });
@@ -75,8 +75,8 @@ class DashboardController extends Controller
                 ['description' => 'You can start adding teachers and subjects', 'time' => 'Now'],
             ];
         
-        // Recent enrollments
-        $recentEnrollments = StudentSubjectEnrollment::with(['student', 'subject'])
+        // Recent internships (changed from enrollments)
+        $recentInternships = Internship::with(['student', 'subject'])  // Changed
             ->latest()
             ->limit(5)
             ->get();
@@ -87,7 +87,7 @@ class DashboardController extends Controller
             'recentStudents',
             'topSubjects',
             'recentActivities',
-            'recentEnrollments'
+            'recentInternships'  // Changed variable name
         )));
     }
 }

@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Models\StudentQRCode;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 
@@ -65,23 +66,34 @@ class UserController extends Controller
             $userData['teacher_id'] = $validated['teacher_id'];
         }
 
-        User::create($userData);
+        $user = User::create($userData);
+
+        // Generate QR code automatically for students
+        if ($user->isStudent()) {
+            StudentQRCode::create([
+                'student_id' => $user->id,
+                'qr_code' => $this->generateUniqueQRCode(),
+                'status' => 'active'
+            ]);
+        }
 
         return redirect()->route('admin.users.index')
-            ->with('success', 'User created successfully.');
+            ->with('success', 'User created successfully.' . ($user->isStudent() ? ' QR code has been generated.' : ''));
     }
 
     public function show(User $user)
     {
         $attendanceCount = 0;
         $totalHours = 0;
+        $activeInternship = null;
         
         if ($user->isStudent()) {
             $attendanceCount = $user->attendances()->count();
             $totalHours = $user->attendances()->sum('hours_worked');
+            $activeInternship = $user->internships()->active()->first();  // Added active internship
         }
         
-        return view('admin.users.show', compact('user', 'attendanceCount', 'totalHours'));
+        return view('admin.users.show', compact('user', 'attendanceCount', 'totalHours', 'activeInternship'));
     }
 
     public function edit(User $user)
@@ -137,14 +149,39 @@ class UserController extends Controller
 
     public function destroy(User $user)
     {
+        // Prevent self-deletion
         if ($user->id === auth()->id()) {
             return redirect()->route('admin.users.index')
                 ->with('error', 'You cannot delete your own account.');
+        }
+        
+        // Check if student has attendance records
+        if ($user->isStudent() && $user->attendances()->count() > 0) {
+            return redirect()->route('admin.users.index')
+                ->with('error', 'Cannot delete student with existing attendance records.');
+        }
+        
+        // Check if teacher has assigned internships
+        if ($user->isTeacher() && $user->supervisedInternships()->count() > 0) {
+            return redirect()->route('admin.users.index')
+                ->with('error', 'Cannot delete teacher with assigned internships.');
         }
         
         $user->delete();
         
         return redirect()->route('admin.users.index')
             ->with('success', 'User deleted successfully.');
+    }
+
+    /**
+     * Generate unique QR code for student
+     */
+    private function generateUniqueQRCode()
+    {
+        do {
+            $code = 'STU_' . strtoupper(uniqid());
+        } while (StudentQRCode::where('qr_code', $code)->exists());
+        
+        return $code;
     }
 }

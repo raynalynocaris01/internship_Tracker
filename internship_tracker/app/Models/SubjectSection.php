@@ -34,10 +34,35 @@ class SubjectSection extends Model
         return $this->belongsTo(User::class, 'teacher_id');
     }
 
+    // Changed from enrollments() to internships()
+    public function internships()
+    {
+        return $this->hasMany(Internship::class, 'subject_id', 'subject_id')
+                    ->where('section_id', $this->section_id);
+    }
+
+    // Keep old method for backward compatibility (optional)
     public function enrollments()
     {
-        return $this->hasMany(StudentSubjectEnrollment::class, 'subject_id', 'subject_id')
-                    ->where('section_id', $this->section_id);
+        return $this->internships();
+    }
+
+    // Get active internships count
+    public function getActiveInternshipsCountAttribute()
+    {
+        return $this->internships()->where('status', 'active')->count();
+    }
+
+    // Get total internships count
+    public function getTotalInternshipsCountAttribute()
+    {
+        return $this->internships()->count();
+    }
+
+    // Get completed internships count
+    public function getCompletedInternshipsCountAttribute()
+    {
+        return $this->internships()->where('status', 'completed')->count();
     }
 
     // Scopes
@@ -50,5 +75,17 @@ class SubjectSection extends Model
     public function getStatusBadgeAttribute()
     {
         return $this->status === 'active' ? 'success' : 'danger';
+    }
+
+    // Get the teacher name with ID
+    public function getTeacherNameAttribute()
+    {
+        return $this->teacher ? $this->teacher->name : 'Not Assigned';
+    }
+
+    // Get full display name for the subject-section pair
+    public function getDisplayNameAttribute()
+    {
+        return $this->subject->code . ' - ' . $this->section->name;
     }
 }

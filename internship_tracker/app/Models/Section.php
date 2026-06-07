@@ -26,16 +26,18 @@ class Section extends Model
                     ->withTimestamps();
     }
 
-    public function enrollments()
+    // Changed from enrollments() to internships()
+    public function internships()
     {
-        return $this->hasMany(StudentSubjectEnrollment::class);
+        return $this->hasMany(Internship::class);
     }
 
+    // Changed from students() to use Internship model
     public function students()
     {
         return $this->hasManyThrough(
             User::class,
-            StudentSubjectEnrollment::class,
+            Internship::class,  // Changed from StudentSubjectEnrollment
             'section_id',
             'id',
             'id',
@@ -54,19 +56,37 @@ class Section extends Model
         return $query->where('course', $course);
     }
 
-    // Accessors
+    // Accessors - Updated to use internships
+    public function getCurrentInternshipCountAttribute()  // Renamed for clarity
+    {
+        return $this->internships()->where('status', 'active')->count();
+    }
+
+    // Keep old name for backward compatibility, but point to new method
     public function getCurrentEnrollmentCountAttribute()
     {
-        return $this->enrollments()->where('status', 'enrolled')->count();
+        return $this->getCurrentInternshipCountAttribute();
     }
 
     public function getAvailableSlotsAttribute()
     {
-        return $this->max_students - $this->current_enrollment_count;
+        return $this->max_students - $this->current_internship_count;
     }
 
     public function getIsFullAttribute()
     {
-        return $this->current_enrollment_count >= $this->max_students;
+        return $this->current_internship_count >= $this->max_students;
+    }
+
+    // New accessor for active internships count
+    public function getActiveInternshipsCountAttribute()
+    {
+        return $this->internships()->where('status', 'active')->count();
+    }
+
+    // New accessor for completed internships count
+    public function getCompletedInternshipsCountAttribute()
+    {
+        return $this->internships()->where('status', 'completed')->count();
     }
 }

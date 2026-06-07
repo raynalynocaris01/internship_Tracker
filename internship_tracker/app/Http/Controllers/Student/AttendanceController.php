@@ -4,14 +4,13 @@ namespace App\Http\Controllers\Student;
 
 use App\Http\Controllers\Controller;
 use App\Models\Attendance;
-use App\Models\StudentSubjectEnrollment;
+use App\Models\Internship;  // Changed from StudentSubjectEnrollment
 use App\Models\StudentQRCode;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 
-// Use only one QR code package - choose based on what you have installed
-// Option 1: If using SimpleSoftwareIO (requires GD extension)
+// QR Code package
 use SimpleSoftwareIO\QrCode\Facades\QrCode;
 
 class AttendanceController extends Controller
@@ -20,16 +19,16 @@ class AttendanceController extends Controller
     {
         $student = auth()->user();
         
-        // Get active enrollment
-        $enrollment = StudentSubjectEnrollment::where('student_id', $student->id)
-            ->where('status', 'enrolled')
+        // Get active internship (changed from enrollment)
+        $internship = Internship::where('student_id', $student->id)
+            ->where('status', 'active')  // Changed from 'enrolled'
             ->with('subject', 'teacher')
             ->first();
         
-        if (!$enrollment) {
+        if (!$internship) {
             return view('student.dashboard', [
-                'noEnrollment' => true,
-                'message' => 'You are not enrolled in any subject. Please contact your administrator.'
+                'noInternship' => true,  // Changed variable name
+                'message' => 'You have no active internship. Please contact your administrator.'
             ]);
         }
         
@@ -41,35 +40,35 @@ class AttendanceController extends Controller
         
         // Today's attendance
         $todayAttendance = Attendance::where('student_id', $student->id)
-            ->where('enrollment_id', $enrollment->id)
+            ->where('internship_id', $internship->id)  // Changed from enrollment_id
             ->whereDate('date', Carbon::today())
             ->first();
         
         // Recent attendance (last 10 records)
         $recentAttendance = Attendance::where('student_id', $student->id)
-            ->where('enrollment_id', $enrollment->id)
+            ->where('internship_id', $internship->id)  // Changed from enrollment_id
             ->orderBy('date', 'desc')
             ->limit(10)
             ->get();
         
         // Statistics
         $totalHours = Attendance::where('student_id', $student->id)
-            ->where('enrollment_id', $enrollment->id)
+            ->where('internship_id', $internship->id)  // Changed from enrollment_id
             ->sum('hours_worked');
             
         $totalDays = Attendance::where('student_id', $student->id)
-            ->where('enrollment_id', $enrollment->id)
+            ->where('internship_id', $internship->id)  // Changed from enrollment_id
             ->count();
             
-        $progress = $enrollment->progress;
-        $requiredHours = $enrollment->subject->required_hours;
+        $progress = $internship->progress;  // Changed from $enrollment->progress
+        $requiredHours = $internship->subject->required_hours;
         $remainingHours = max($requiredHours - $totalHours, 0);
         
         // Generate QR code image
         $qrCodeImage = $this->generateQRCodeImage($qrCode->qr_code);
         
         return view('student.dashboard', compact(
-            'student', 'enrollment', 'qrCode', 'qrCodeImage',
+            'student', 'internship', 'qrCode', 'qrCodeImage',  // Changed 'enrollment' to 'internship'
             'todayAttendance', 'recentAttendance', 'totalHours', 
             'totalDays', 'progress', 'requiredHours', 'remainingHours'
         ));
@@ -129,21 +128,21 @@ class AttendanceController extends Controller
                 ], 400);
             }
             
-            // Get active enrollment
-            $enrollment = StudentSubjectEnrollment::where('student_id', $student->id)
-                ->where('status', 'enrolled')
+            // Get active internship (changed from enrollment)
+            $internship = Internship::where('student_id', $student->id)
+                ->where('status', 'active')  // Changed from 'enrolled'
                 ->first();
             
-            if (!$enrollment) {
+            if (!$internship) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'No active enrollment found.'
+                    'message' => 'No active internship found.'
                 ], 400);
             }
             
             // Check if already timed in today
             $existingAttendance = Attendance::where('student_id', $student->id)
-                ->where('enrollment_id', $enrollment->id)
+                ->where('internship_id', $internship->id)  // Changed from enrollment_id
                 ->whereDate('date', Carbon::today())
                 ->first();
             
@@ -164,8 +163,8 @@ class AttendanceController extends Controller
             // Create attendance record
             $attendance = Attendance::create([
                 'student_id' => $student->id,
-                'subject_id' => $enrollment->subject_id,
-                'enrollment_id' => $enrollment->id,
+                'subject_id' => $internship->subject_id,  // Changed from enrollment->subject_id
+                'internship_id' => $internship->id,  // Changed from enrollment_id
                 'date' => Carbon::today(),
                 'time_in' => Carbon::now(),
                 'qr_code_scanned' => $qrData,
@@ -252,11 +251,18 @@ class AttendanceController extends Controller
             $attendance->hours_worked = round($hours, 2);
             $attendance->save();
             
-            // Update enrollment total hours
-            if ($attendance->enrollment) {
-                $totalHours = Attendance::where('enrollment_id', $attendance->enrollment_id)->sum('hours_worked');
-                $attendance->enrollment->total_hours_rendered = $totalHours;
-                $attendance->enrollment->save();
+            // Update internship total hours (changed from enrollment)
+            if ($attendance->internship) {
+                $totalHours = Attendance::where('internship_id', $attendance->internship_id)->sum('hours_worked');
+                $attendance->internship->total_hours_rendered = $totalHours;
+                $attendance->internship->save();
+                
+                // Check if internship is completed
+                if ($totalHours >= $attendance->internship->subject->required_hours) {
+                    $attendance->internship->status = 'completed';
+                    $attendance->internship->completion_date = Carbon::today();
+                    $attendance->internship->save();
+                }
             }
         }
         
@@ -268,7 +274,7 @@ class AttendanceController extends Controller
         $student = auth()->user();
         
         $attendances = Attendance::where('student_id', $student->id)
-            ->with('subject')
+            ->with(['internship.subject'])  // Changed from 'subject'
             ->orderBy('date', 'desc')
             ->paginate(20);
             

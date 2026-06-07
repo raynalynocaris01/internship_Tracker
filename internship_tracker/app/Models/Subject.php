@@ -41,9 +41,10 @@ class Subject extends Model
                     ->withTimestamps();
     }
 
-    public function enrollments()
+    // Changed from enrollments() to internships()
+    public function internships()
     {
-        return $this->hasMany(StudentSubjectEnrollment::class);
+        return $this->hasMany(Internship::class);
     }
 
     public function attendances()
@@ -73,14 +74,50 @@ class Subject extends Model
         return $this->status === 'active' ? 'success' : 'danger';
     }
 
-    // Helper Methods
+    // Helper Methods - Updated to use internships
+    public function getTotalActiveInternshipsAttribute()
+    {
+        return $this->internships()->where('status', 'active')->count();
+    }
+
+    public function getTotalCompletedInternshipsAttribute()
+    {
+        return $this->internships()->where('status', 'completed')->count();
+    }
+
+    public function getTotalInternshipsAttribute()
+    {
+        return $this->internships()->count();
+    }
+
+    // Keep old names for backward compatibility (optional)
     public function getTotalEnrolledStudentsAttribute()
     {
-        return $this->enrollments()->where('status', 'enrolled')->count();
+        return $this->getTotalActiveInternshipsAttribute();
     }
 
     public function getTotalCompletedStudentsAttribute()
     {
-        return $this->enrollments()->where('status', 'completed')->count();
+        return $this->getTotalCompletedInternshipsAttribute();
+    }
+
+    // Get all students with active internships for this subject
+    public function getActiveStudentsAttribute()
+    {
+        return $this->internships()
+            ->where('status', 'active')
+            ->with('student')
+            ->get()
+            ->pluck('student');
+    }
+
+    // Calculate overall completion rate for this subject
+    public function getCompletionRateAttribute()
+    {
+        $total = $this->total_internships;
+        if ($total == 0) return 0;
+        
+        $completed = $this->total_completed_internships;
+        return round(($completed / $total) * 100, 2);
     }
 }

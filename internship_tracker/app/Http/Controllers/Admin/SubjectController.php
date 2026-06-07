@@ -11,7 +11,7 @@ class SubjectController extends Controller
 {
     public function index()
     {
-        $subjects = Subject::withCount('enrollments')
+        $subjects = Subject::withCount('internships')  // Changed from 'enrollments'
             ->latest()
             ->paginate(15);
         return view('admin.subjects.index', compact('subjects'));
@@ -43,7 +43,7 @@ class SubjectController extends Controller
 
     public function show(Subject $subject)
     {
-        $subject->load(['enrollments.student', 'sections']);
+        $subject->load(['internships.student', 'sections']);  // Changed from 'enrollments.student'
         return view('admin.subjects.show', compact('subject'));
     }
 
@@ -73,14 +73,31 @@ class SubjectController extends Controller
 
     public function destroy(Subject $subject)
     {
-        // Check if subject has enrollments
-        if ($subject->enrollments()->count() > 0) {
+        // Check if subject has active internships
+        if ($subject->internships()->count() > 0) {  // Changed from 'enrollments'
             return redirect()->route('admin.subjects.index')
-                ->with('error', 'Cannot delete subject with existing enrollments.');
+                ->with('error', 'Cannot delete subject with existing internships.');
         }
         
         $subject->delete();
         return redirect()->route('admin.subjects.index')
             ->with('success', 'Subject deleted successfully.');
+    }
+
+    // Optional: Get statistics for a subject
+    public function statistics(Subject $subject)
+    {
+        $stats = [
+            'total_internships' => $subject->internships()->count(),
+            'active_internships' => $subject->internships()->where('status', 'active')->count(),
+            'completed_internships' => $subject->internships()->where('status', 'completed')->count(),
+            'total_hours_rendered' => $subject->internships()->with('attendances')->get()
+                ->sum(function($internship) {
+                    return $internship->attendances->sum('hours_worked');
+                }),
+            'total_students' => $subject->internships()->distinct('student_id')->count('student_id'),
+        ];
+
+        return response()->json($stats);
     }
 }
