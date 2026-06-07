@@ -26,7 +26,12 @@ class Subject extends Model
         'school_year' => 'integer',
     ];
 
-    // Relationships
+    // ========== RELATIONSHIPS ==========
+    
+    /**
+     * Sections assigned to this subject (Many-to-Many)
+     * Each assignment includes which teacher teaches this subject to that section
+     */
     public function sections()
     {
         return $this->belongsToMany(Section::class, 'subject_section')
@@ -34,6 +39,10 @@ class Subject extends Model
                     ->withTimestamps();
     }
 
+    /**
+     * Teachers assigned to teach this subject (Many-to-Many)
+     * Each assignment includes which section they teach
+     */
     public function teachers()
     {
         return $this->belongsToMany(User::class, 'subject_section', 'subject_id', 'teacher_id')
@@ -41,18 +50,24 @@ class Subject extends Model
                     ->withTimestamps();
     }
 
-    // Changed from enrollments() to internships()
+    /**
+     * Internships under this subject
+     */
     public function internships()
     {
         return $this->hasMany(Internship::class);
     }
 
+    /**
+     * Attendance records for this subject
+     */
     public function attendances()
     {
         return $this->hasMany(Attendance::class);
     }
 
-    // Scopes
+    // ========== SCOPES ==========
+    
     public function scopeActive($query)
     {
         return $query->where('status', 'active');
@@ -63,7 +78,8 @@ class Subject extends Model
         return $query->where('semester', $semester);
     }
 
-    // Accessors
+    // ========== ACCESSORS ==========
+    
     public function getFullNameAttribute()
     {
         return "{$this->code} - {$this->name}";
@@ -74,7 +90,8 @@ class Subject extends Model
         return $this->status === 'active' ? 'success' : 'danger';
     }
 
-    // Helper Methods - Updated to use internships
+    // ========== STATISTICS METHODS ==========
+    
     public function getTotalActiveInternshipsAttribute()
     {
         return $this->internships()->where('status', 'active')->count();
@@ -90,28 +107,6 @@ class Subject extends Model
         return $this->internships()->count();
     }
 
-    // Keep old names for backward compatibility (optional)
-    public function getTotalEnrolledStudentsAttribute()
-    {
-        return $this->getTotalActiveInternshipsAttribute();
-    }
-
-    public function getTotalCompletedStudentsAttribute()
-    {
-        return $this->getTotalCompletedInternshipsAttribute();
-    }
-
-    // Get all students with active internships for this subject
-    public function getActiveStudentsAttribute()
-    {
-        return $this->internships()
-            ->where('status', 'active')
-            ->with('student')
-            ->get()
-            ->pluck('student');
-    }
-
-    // Calculate overall completion rate for this subject
     public function getCompletionRateAttribute()
     {
         $total = $this->total_internships;
@@ -119,5 +114,47 @@ class Subject extends Model
         
         $completed = $this->total_completed_internships;
         return round(($completed / $total) * 100, 2);
+    }
+
+    // ========== TEACHER ASSIGNMENT METHODS ==========
+    
+    /**
+     * Get all teacher assignments for this subject
+     * Returns collection with teacher and section info
+     */
+    public function getTeacherAssignmentsAttribute()
+    {
+        return $this->sections()
+            ->withPivot('teacher_id', 'status')
+            ->get()
+            ->map(function($section) {
+                $teacher = User::find($section->pivot->teacher_id);
+                return (object)[
+                    'section' => $section,
+                    'teacher' => $teacher,
+                    'status' => $section->pivot->status
+                ];
+            });
+    }
+
+    /**
+     * Check if a teacher is assigned to this subject
+     */
+    public function hasTeacher($teacherId)
+    {
+        return $this->teachers()->where('teacher_id', $teacherId)->exists();
+    }
+
+    /**
+     * Get the teacher assigned to a specific section
+     */
+    public function getTeacherForSection($sectionId)
+    {
+        $assignment = $this->sections()
+            ->where('section_id', $sectionId)
+            ->withPivot('teacher_id')
+            ->first();
+        
+        return $assignment ? User::find($assignment->pivot->teacher_id) : null;
     }
 }

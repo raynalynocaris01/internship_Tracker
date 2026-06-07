@@ -37,9 +37,8 @@
                             <th>Subject Name</th>
                             <th>Units</th>
                             <th>Required Hours</th>
-                            <th>Semester</th>
-                            <th>School Year</th>
-                            <th>Active Internships</th>  <!-- Changed from "Enrolled" -->
+                            <th>Assigned To</th>
+                            <th>Active Internships</th>
                             <th>Status</th>
                             <th>Actions</th>
                         </tr>
@@ -49,38 +48,51 @@
                         <tr>
                             <td><strong>{{ $subject->code }}</strong></td>
                             <td>{{ $subject->name }}</td>
-                            <td class="text-center">{{ $subject->units }}</td>
-                            <td class="text-center">{{ number_format($subject->required_hours) }} hrs</td>
-                            <td class="text-center">{{ $subject->semester }} Sem</td>
-                            <td class="text-center">{{ $subject->school_year }}</td>
-                            <td class="text-center">
-                                <span class="badge bg-primary">{{ $subject->internships_count ?? 0 }}</span>  <!-- Changed from enrollments_count -->
-                            </td>
+                            <td>{{ $subject->units }}</p>
+                            <td class="text-center">{{ number_format($subject->required_hours) }} hrs</p>
+                            <td>
+                                @if($subject->sections && $subject->sections->count() > 0)
+                                    @foreach($subject->sections as $assignment)
+                                        <div class="mb-1">
+                                            <span class="badge bg-info">{{ $assignment->name }}</span>
+                                            @php
+                                                $teacher = \App\Models\User::find($assignment->pivot->teacher_id);
+                                            @endphp
+                                            @if($teacher)
+                                                <small class="text-muted">→ {{ $teacher->name }}</small>
+                                            @endif
+                                        </div>
+                                    @endforeach
+                                @else
+                                    <span class="badge bg-secondary">No assignments</span>
+                                @endif
+                            </p>
+                            <td class="text-center">{{ $subject->internships_count ?? 0 }}</p>
                             <td class="text-center">
                                 @if($subject->status == 'active')
                                     <span class="badge bg-success">Active</span>
                                 @else
                                     <span class="badge bg-danger">Inactive</span>
                                 @endif
-                            </td>
+                            </p>
                             <td class="text-center">
-                                <a href="{{ route('admin.subjects.show', $subject) }}" class="btn btn-sm btn-info">
-                                    <i class="fas fa-eye"></i> View
+                                <a href="{{ route('admin.subjects.show', $subject) }}" class="btn btn-sm btn-info" title="View Details">
+                                    <i class="fas fa-eye"></i>
                                 </a>
-                                <a href="{{ route('admin.subjects.edit', $subject) }}" class="btn btn-sm btn-warning">
-                                    <i class="fas fa-edit"></i> Edit
+                                <a href="{{ route('admin.subjects.edit', $subject) }}" class="btn btn-sm btn-warning" title="Edit">
+                                    <i class="fas fa-edit"></i>
                                 </a>
                                 <form action="{{ route('admin.subjects.destroy', $subject) }}" method="POST" class="d-inline">
                                     @csrf @method('DELETE')
-                                    <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Delete this subject? This will also delete all associated internships.')">
-                                        <i class="fas fa-trash"></i> Delete
+                                    <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Delete this subject?')" title="Delete">
+                                        <i class="fas fa-trash"></i>
                                     </button>
                                 </form>
-                            </td>
+                            </p>
                         </tr>
                         @empty
                             <tr>
-                                <td colspan="9" class="text-center text-muted">
+                                <td colspan="8" class="text-center text-muted">
                                     <i class="fas fa-book fa-2x mb-2"></i>
                                     <p>No subjects found.</p>
                                     <a href="{{ route('admin.subjects.create') }}" class="btn btn-primary btn-sm">
@@ -90,7 +102,7 @@
                             </tr>
                         @endforelse
                     </tbody>
-                </table>
+                </div>
             </div>
 
             <div class="mt-3 d-flex justify-content-between align-items-center">

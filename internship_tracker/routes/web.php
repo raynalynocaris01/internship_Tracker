@@ -40,16 +40,21 @@ Route::middleware(['auth'])->group(function () {
     });
     
     // ============ TEACHER ROUTES ============
-    Route::middleware(['role:teacher'])->prefix('teacher')->name('teacher.')->group(function () {
-        // Dashboard
-        Route::get('/dashboard', [TeacherDashboardController::class, 'index'])->name('dashboard');
-        
-        // Student management
-        Route::get('/students', [TeacherStudentController::class, 'index'])->name('students.index');
-        Route::get('/students/create', [TeacherStudentController::class, 'create'])->name('students.create');
-        Route::post('/students', [TeacherStudentController::class, 'store'])->name('students.store');
-        Route::get('/students/{student}', [TeacherStudentController::class, 'show'])->name('students.show');
-    });
+Route::middleware(['role:teacher'])->prefix('teacher')->name('teacher.')->group(function () {
+    // Dashboard
+    Route::get('/dashboard', [TeacherDashboardController::class, 'index'])->name('dashboard');
+    
+    // Student management
+    Route::resource('students', TeacherStudentController::class);
+    
+    // Internship management
+    Route::resource('internships', App\Http\Controllers\Teacher\InternshipController::class);
+    Route::post('/students/bulk-assign', [App\Http\Controllers\Teacher\StudentController::class, 'bulkAssign'])->name('students.bulk-assign');
+    // Attendance management - ADD THE MISSING ROUTES
+    Route::get('/attendance', [App\Http\Controllers\Teacher\AttendanceController::class, 'index'])->name('attendance.index');
+    Route::get('/attendance/{attendance}', [App\Http\Controllers\Teacher\AttendanceController::class, 'show'])->name('attendance.show');  // ADD THIS LINE
+    Route::get('/attendance/student/{studentId}', [App\Http\Controllers\Teacher\AttendanceController::class, 'byStudent'])->name('attendance.by_student');
+});
     
     // ============ STUDENT ROUTES ============
     Route::middleware(['role:student'])->prefix('student')->name('student.')->group(function () {

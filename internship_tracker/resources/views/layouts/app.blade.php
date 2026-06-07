@@ -136,15 +136,20 @@
                        href="{{ route('admin.users.index') }}">
                         <i class="fas fa-user-cog"></i> Users
                     </a>
-                @elseif(auth()->user()->isTeacher())
+               @elseif(auth()->user()->isTeacher())
                     <a class="nav-link {{ request()->routeIs('teacher.dashboard') ? 'active' : '' }}" 
-                       href="{{ route('teacher.dashboard') }}">
+                    href="{{ route('teacher.dashboard') }}">
                         <i class="fas fa-tachometer-alt"></i> Dashboard
                     </a>
                     <a class="nav-link {{ request()->routeIs('teacher.students.*') ? 'active' : '' }}" 
-                       href="{{ route('teacher.students.index') }}">
-                        <i class="fas fa-users"></i> My Students
+                    href="{{ route('teacher.students.index') }}">
+                        <i class="fas fa-users"></i> Section Internship
                     </a>
+                    <a class="nav-link {{ request()->routeIs('teacher.attendance.*') ? 'active' : '' }}" 
+                    href="{{ route('teacher.attendance.index') }}">
+                        <i class="fas fa-clock"></i> Attendance
+                    </a>
+                
                 @elseif(auth()->user()->isStudent())
                     <a class="nav-link {{ request()->routeIs('student.dashboard') ? 'active' : '' }}" 
                        href="{{ route('student.dashboard') }}">

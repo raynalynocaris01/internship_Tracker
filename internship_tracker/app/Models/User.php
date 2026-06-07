@@ -32,7 +32,8 @@ class User extends Authenticatable
         'password' => 'hashed',
     ];
 
-    // Role check methods
+    // ========== ROLE CHECK METHODS ==========
+    
     public function isAdmin(): bool
     {
         return $this->role === 'admin';
@@ -48,32 +49,11 @@ class User extends Authenticatable
         return $this->role === 'student';
     }
 
-    // Relationships - Updated for students
+    // ========== STUDENT RELATIONSHIPS ==========
+    
     public function internships()
     {
         return $this->hasMany(Internship::class, 'student_id');
-    }
-
-    // Relationships - Updated for teachers
-    public function supervisedInternships()
-    {
-        return $this->hasMany(Internship::class, 'teacher_id');
-    }
-
-    // Keep old names for backward compatibility (optional)
-    public function studentEnrollments()
-    {
-        return $this->internships();
-    }
-
-    public function teachingEnrollments()
-    {
-        return $this->supervisedInternships();
-    }
-
-    public function subjectSections()
-    {
-        return $this->hasMany(SubjectSection::class, 'teacher_id');
     }
 
     public function attendances()
@@ -86,12 +66,55 @@ class User extends Authenticatable
         return $this->hasOne(StudentQRCode::class, 'student_id');
     }
 
+    // ========== TEACHER RELATIONSHIPS ==========
+    
+    /**
+     * Internships supervised by this teacher
+     */
+    public function supervisedInternships()
+    {
+        return $this->hasMany(Internship::class, 'teacher_id');
+    }
+
+    /**
+     * Subjects this teacher teaches (Many-to-Many)
+     * Each assignment includes which section they teach
+     */
+    public function subjects()
+    {
+        return $this->belongsToMany(Subject::class, 'subject_section', 'teacher_id', 'subject_id')
+                    ->withPivot('section_id', 'status')
+                    ->withTimestamps();
+    }
+
+    /**
+     * Sections this teacher is assigned to (Many-to-Many)
+     * Each assignment includes which subject they teach
+     */
+    public function teachingSections()
+    {
+        return $this->belongsToMany(Section::class, 'subject_section', 'teacher_id', 'section_id')
+                    ->withPivot('subject_id', 'status')
+                    ->withTimestamps();
+    }
+
+    /**
+     * Subject section assignments (pivot)
+     */
+    public function subjectSections()
+    {
+        return $this->hasMany(SubjectSection::class, 'teacher_id');
+    }
+
+    // ========== COMMON RELATIONSHIPS ==========
+    
     public function activityLogs()
     {
         return $this->hasMany(ActivityLog::class);
     }
 
-    // Scopes
+    // ========== SCOPES ==========
+    
     public function scopeStudents($query)
     {
         return $query->where('role', 'student');
@@ -107,7 +130,8 @@ class User extends Authenticatable
         return $query->where('role', 'admin');
     }
 
-    // Accessors
+    // ========== STUDENT ACCESSORS ==========
+    
     public function getTotalHoursAttribute()
     {
         return $this->attendances()->sum('hours_worked');
@@ -118,8 +142,7 @@ class User extends Authenticatable
         return $this->attendances()->count();
     }
 
-    // Updated to use internships
-    public function getCurrentInternshipAttribute()
+    public function getActiveInternshipAttribute()
     {
         return $this->internships()
             ->where('status', 'active')
@@ -127,33 +150,90 @@ class User extends Authenticatable
             ->first();
     }
 
-    // Keep old name for backward compatibility
-    public function getCurrentEnrollmentAttribute()
-    {
-        return $this->getCurrentInternshipAttribute();
-    }
-
-    // Get active internship (alias)
-    public function getActiveInternshipAttribute()
-    {
-        return $this->getCurrentInternshipAttribute();
-    }
-
-    // Get all internships for the student
     public function getAllInternshipsAttribute()
     {
         return $this->internships()->with('subject')->get();
     }
 
-    // Get student's total internship hours across all internships
     public function getTotalInternshipHoursAttribute()
     {
         return $this->internships()->sum('total_hours_rendered');
     }
 
-    // Get student's completion status
     public function getHasCompletedInternshipAttribute()
     {
         return $this->internships()->where('status', 'completed')->exists();
+    }
+
+    // ========== TEACHER ACCESSORS ==========
+    
+    /**
+     * Get all teaching assignments for this teacher
+     * Returns collection with subject and section info
+     */
+    public function getTeachingAssignmentsAttribute()
+    {
+        return $this->subjects()
+            ->withPivot('section_id', 'status')
+            ->get()
+            ->map(function($subject) {
+                $section = Section::find($subject->pivot->section_id);
+                return (object)[
+                    'subject' => $subject,
+                    'section' => $section,
+                    'status' => $subject->pivot->status
+                ];
+            });
+    }
+
+    /**
+     * Get all sections this teacher is assigned to
+     */
+    public function getAssignedSectionsAttribute()
+    {
+        return $this->teachingSections()->get();
+    }
+
+    /**
+     * Get all subjects this teacher teaches
+     */
+    public function getTaughtSubjectsAttribute()
+    {
+        return $this->subjects()->get();
+    }
+
+    /**
+     * Check if teacher is assigned to a specific subject
+     */
+    public function teachesSubject($subjectId)
+    {
+        return $this->subjects()->where('subject_id', $subjectId)->exists();
+    }
+
+    /**
+     * Check if teacher is assigned to a specific section
+     */
+    public function teachesInSection($sectionId)
+    {
+        return $this->teachingSections()->where('section_id', $sectionId)->exists();
+    }
+
+    /**
+     * Get total number of students under this teacher's supervision
+     */
+    public function getTotalStudentsAttribute()
+    {
+        return $this->supervisedInternships()
+            ->where('status', 'active')
+            ->distinct('student_id')
+            ->count('student_id');
+    }
+
+    /**
+     * Get total active internships under this teacher
+     */
+    public function getActiveInternshipsCountAttribute()
+    {
+        return $this->supervisedInternships()->where('status', 'active')->count();
     }
 }

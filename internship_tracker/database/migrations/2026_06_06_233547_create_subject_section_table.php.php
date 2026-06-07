@@ -18,6 +18,7 @@ return new class extends Migration
             $table->timestamps();
             
             $table->unique(['subject_id', 'section_id']);
+            $table->index(['subject_id', 'teacher_id']);
         });
     }
 
