@@ -49,11 +49,21 @@ Route::middleware(['role:teacher'])->prefix('teacher')->name('teacher.')->group(
     
     // Internship management
     Route::resource('internships', App\Http\Controllers\Teacher\InternshipController::class);
-    Route::post('/students/bulk-assign', [App\Http\Controllers\Teacher\StudentController::class, 'bulkAssign'])->name('students.bulk-assign');
-    // Attendance management - ADD THE MISSING ROUTES
+    Route::post('/students/bulk-assign', [TeacherStudentController::class, 'bulkAssign'])->name('students.bulk-assign');
+    
+    // Attendance management
     Route::get('/attendance', [App\Http\Controllers\Teacher\AttendanceController::class, 'index'])->name('attendance.index');
-    Route::get('/attendance/{attendance}', [App\Http\Controllers\Teacher\AttendanceController::class, 'show'])->name('attendance.show');  // ADD THIS LINE
+    Route::get('/attendance/{attendance}', [App\Http\Controllers\Teacher\AttendanceController::class, 'show'])->name('attendance.show');
     Route::get('/attendance/student/{studentId}', [App\Http\Controllers\Teacher\AttendanceController::class, 'byStudent'])->name('attendance.by_student');
+    
+    // Manual attendance & quick time in/out
+    Route::get('/students/{student}/attendance/create', [App\Http\Controllers\Teacher\AttendanceController::class, 'createManualAttendance'])->name('students.attendance.create');
+    Route::post('/students/{student}/attendance/manual', [App\Http\Controllers\Teacher\AttendanceController::class, 'manualAttendance'])->name('students.attendance.manual');
+    Route::post('/students/{student}/attendance/timein', [App\Http\Controllers\Teacher\AttendanceController::class, 'timeIn'])->name('students.attendance.timein');
+    Route::post('/students/{student}/attendance/timeout', [App\Http\Controllers\Teacher\AttendanceController::class, 'timeOut'])->name('students.attendance.timeout');
+    
+    // Delete student
+    Route::delete('/students/{student}', [TeacherStudentController::class, 'destroy'])->name('students.destroy');
 });
     
     // ============ STUDENT ROUTES ============

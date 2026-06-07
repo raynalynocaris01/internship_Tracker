@@ -31,7 +31,7 @@
                             <th>Course</th>
                             <td>{{ $student->course ?? 'N/A' }}</p>
                         </tr>
-                        <tr>
+                        <td>
                             <th>Year Level</th>
                             <td>{{ $student->year_level ?? 'N/A' }} Year</p>
                         </tr>
@@ -53,7 +53,7 @@
                     </h5>
                 </div>
                 <div class="card-body">
-                    @if($internship)  <!-- Changed from $enrollment -->
+                    @if($internship)
                         <div class="row">
                             <div class="col-md-6">
                                 <p><strong>Subject:</strong> {{ $internship->subject->code }} - {{ $internship->subject->name }}</p>
@@ -87,6 +87,30 @@
                                 @endif
                             </div>
                         </div>
+
+                        <!-- Quick Time In / Time Out Buttons -->
+                        @if($internship->status == 'active')
+                        <div class="mt-3 d-flex gap-2">
+                            <form method="POST" action="{{ route('teacher.students.attendance.timein', $student) }}" class="d-inline">
+                                @csrf
+                                <button type="submit" class="btn btn-success">
+                                    <i class="fas fa-sign-in-alt"></i> Time In
+                                </button>
+                            </form>
+
+                            <form method="POST" action="{{ route('teacher.students.attendance.timeout', $student) }}" class="d-inline">
+                                @csrf
+                                <button type="submit" class="btn btn-danger">
+                                    <i class="fas fa-sign-out-alt"></i> Time Out
+                                </button>
+                            </form>
+
+                            <a href="{{ route('teacher.students.attendance.create', $student) }}" class="btn btn-primary">
+                                <i class="fas fa-clock"></i> Manual Entry
+                            </a>
+                        </div>
+                        @endif
+
                     @else
                         <div class="alert alert-warning">
                             <i class="fas fa-exclamation-triangle"></i> 
@@ -158,6 +182,7 @@
                 <i class="fas fa-edit"></i> Edit Internship
             </a>
         @endif
+        <!-- The Manual button is now inside the internship card, so we remove the duplicate below -->
     </div>
 </div>
 @endsection

@@ -28,6 +28,22 @@
                             @error('student_id')<div class="invalid-feedback">{{ $message }}</div>@enderror
                         </div>
                         
+                        <!-- ADD SECTION DROPDOWN -->
+                        <div class="mb-3">
+                            <label for="section_id" class="form-label">Section *</label>
+                            <select class="form-control @error('section_id') is-invalid @enderror" 
+                                    name="section_id" required>
+                                <option value="">Select Section</option>
+                                @foreach($sections as $section)
+                                    <option value="{{ $section->id }}">
+                                        {{ $section->name }} ({{ $section->course }} - Year {{ $section->year_level }})
+                                    </option>
+                                @endforeach
+                            </select>
+                            @error('section_id')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                            <small class="text-muted">Select the section for this internship</small>
+                        </div>
+                        
                         <div class="mb-3">
                             <label for="subject_id" class="form-label">Subject *</label>
                             <select class="form-control @error('subject_id') is-invalid @enderror" 

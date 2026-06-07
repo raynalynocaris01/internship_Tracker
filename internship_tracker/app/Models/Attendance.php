@@ -18,6 +18,7 @@ class Attendance extends Model
         'internship_id',  // Changed from 'enrollment_id'
         'date',
         'time_in',
+         'session',     
         'time_out',
         'hours_worked',
         'qr_code_scanned',
