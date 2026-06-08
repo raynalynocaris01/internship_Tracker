@@ -10,7 +10,7 @@ class SectionController extends Controller
 {
     public function index()
     {
-        $sections = Section::withCount('internships')  // Changed from 'enrollments'
+        $sections = Section::withCount('internships')
             ->latest()
             ->paginate(15);
         return view('admin.sections.index', compact('sections'));
@@ -27,7 +27,7 @@ class SectionController extends Controller
             'name' => 'required|string|max:255',
             'code' => 'required|string|unique:sections|max:20',
             'year_level' => 'required|integer|min:1|max:4',
-            'course' => 'required|string|in:BSIT,BSCS,BSIS,BSECE',
+            'course' => 'required|string|max:255',   
             'max_students' => 'required|integer|min:1|max:60',
             'status' => 'required|in:active,inactive'
         ]);
@@ -40,7 +40,7 @@ class SectionController extends Controller
 
     public function show(Section $section)
     {
-        $section->load(['internships.student', 'subjects']);  // Changed from 'enrollments.student'
+        $section->load(['internships.student', 'subjects']);
         return view('admin.sections.show', compact('section'));
     }
 
@@ -55,7 +55,7 @@ class SectionController extends Controller
             'name' => 'required|string|max:255',
             'code' => 'required|string|max:20|unique:sections,code,' . $section->id,
             'year_level' => 'required|integer|min:1|max:4',
-            'course' => 'required|string|in:BSIT,BSCS,BSIS,BSECE',
+            'course' => 'required|string|max:255',   
             'max_students' => 'required|integer|min:1|max:60',
             'status' => 'required|in:active,inactive'
         ]);
@@ -68,8 +68,7 @@ class SectionController extends Controller
 
     public function destroy(Section $section)
     {
-        // Check if section has any internships (students assigned)
-        if ($section->internships()->count() > 0) {  // Changed from 'enrollments'
+        if ($section->internships()->count() > 0) {
             return redirect()->route('admin.sections.index')
                 ->with('error', 'Cannot delete section with assigned internships.');
         }

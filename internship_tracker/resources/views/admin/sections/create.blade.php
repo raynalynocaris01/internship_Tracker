@@ -18,13 +18,13 @@
                         <div class="mb-3">
                             <label for="name" class="form-label">Section Name *</label>
                             <input type="text" class="form-control @error('name') is-invalid @enderror" 
-                                   id="name" name="name" value="{{ old('name') }}" placeholder="e.g., BSIT-3A" required>
+                                   id="name" name="name" value="{{ old('name') }}" required>
                             @error('name')
                                 <div class="invalid-feedback">{{ $message }}</div>
                             @enderror
                         </div>
 
-                        <div class="mb-3">
+                        <!-- <div class="mb-3">
                             <label for="code" class="form-label">Section Code *</label>
                             <input type="text" class="form-control @error('code') is-invalid @enderror" 
                                    id="code" name="code" value="{{ old('code') }}" placeholder="e.g., BSIT3A" required>
@@ -32,14 +32,14 @@
                             @error('code')
                                 <div class="invalid-feedback">{{ $message }}</div>
                             @enderror
-                        </div>
+                        </div> -->
 
                         <div class="row">
                             <div class="col-md-6 mb-3">
                                 <label for="course" class="form-label">Course *</label>
                                 <input type="text" class="form-control @error('course') is-invalid @enderror" 
-                                       id="course" name="course" value="{{ old('course') }}" placeholder="e.g., BS Information Technology" required>
-                                <small class="text-muted">Enter the course name (e.g., BS Information Technology)</small>
+                                       id="course" name="course" value="{{ old('course') }}" >
+                                
                                 @error('course')
                                     <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
