@@ -33,7 +33,7 @@
                 <table class="table table-hover">
                     <thead>
                         <tr>
-                            <th>Code</th>
+                            <!-- <th>Code</th> -->
                             <th>Section Name</th>
                             <th>Course</th>
                             <th>Year Level</th>
@@ -47,7 +47,7 @@
                     <tbody>
                         @forelse($sections as $section)
                         <tr>
-                            <td><strong>{{ $section->code }}</strong></td>
+                            <!-- <td><strong>{{ $section->code }}</strong></td> -->
                             <td>{{ $section->name }}</td>
                             <td>{{ $section->course }}</td>
                             <td>{{ $section->year_level }} Year</td>

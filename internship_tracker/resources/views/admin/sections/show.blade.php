@@ -14,10 +14,10 @@
             <div class="row">
                 <div class="col-md-6">
                     <table class="table table-bordered">
-                        <tr>
+                        <!-- <tr>
                             <th width="30%">Section Code</th>
                             <td>{{ $section->code }}</td>
-                        </tr>
+                        </tr> -->
                         <tr>
                             <th>Section Name</th>
                             <td>{{ $section->name }}</td>
