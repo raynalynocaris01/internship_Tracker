@@ -129,7 +129,7 @@
                     </a>
                     <a class="nav-link {{ request()->routeIs('admin.internships.*') ? 'active' : '' }}" 
                        href="{{ route('admin.internships.index') }}">
-                        <i class="fas fa-briefcase"></i> Internships  <!-- Fixed: uppercase I, changed icon -->
+                        <i class="fas fa-briefcase"></i> Internships
                     </a>
                     <a class="nav-link {{ request()->routeIs('admin.attendances.*') ? 'active' : '' }}" 
                        href="{{ route('admin.attendances.index') }}">
@@ -218,6 +218,9 @@
     </main>
 
     <!-- Scripts -->
+    <!-- jQuery (required for some admin scripts) -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js" integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" crossorigin="anonymous"></script>
+    <!-- Bootstrap JS Bundle -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         // Sidebar toggle for mobile
