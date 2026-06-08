@@ -45,15 +45,12 @@
 
                             <div class="mb-3">
                                 <label for="course" class="form-label">Course</label>
-                                <select class="form-control @error('course') is-invalid @enderror" id="course" name="course">
-                                    <option value="BSIT" {{ old('course', $user->course) == 'BSIT' ? 'selected' : '' }}>BS Information Technology</option>
-                                    <option value="BSCS" {{ old('course', $user->course) == 'BSCS' ? 'selected' : '' }}>BS Computer Science</option>
-                                    <option value="BSIS" {{ old('course', $user->course) == 'BSIS' ? 'selected' : '' }}>BS Information Systems</option>
-                                    <option value="BSECE" {{ old('course', $user->course) == 'BSECE' ? 'selected' : '' }}>BS Electronics Engineering</option>
-                                </select>
+                                <input type="text" class="form-control @error('course') is-invalid @enderror" 
+                                    id="course" name="course" value="{{ old('course', $user->course) }}">
                                 @error('course')
                                     <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
+                                <small class="text-muted">Enter the course name (e.g., BS Information Technology)</small>
                             </div>
 
                             <div class="mb-3">

@@ -99,7 +99,7 @@ class StudentController extends Controller
             'name'       => 'required|string|max:255',
             'email'      => 'required|string|email|max:255|unique:users',
             'student_id' => 'required|string|unique:users',
-            'course'     => 'required|string|in:BSIT,BSCS,BSIS,BSECE',
+            'course' => 'required|string|max:255',
             'year_level' => 'required|integer|min:1|max:4',
             'password'   => 'required|string|min:8|confirmed',
             'section_id' => 'required|exists:sections,id',

@@ -57,19 +57,14 @@
                                     <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
                             </div>
-
                             <div class="mb-3">
                                 <label for="course" class="form-label">Course *</label>
-                                <select class="form-control @error('course') is-invalid @enderror" id="course" name="course">
-                                    <option value="">Select Course</option>
-                                    <option value="BSIT" {{ old('course') == 'BSIT' ? 'selected' : '' }}>BS Information Technology</option>
-                                    <option value="BSCS" {{ old('course') == 'BSCS' ? 'selected' : '' }}>BS Computer Science</option>
-                                    <option value="BSIS" {{ old('course') == 'BSIS' ? 'selected' : '' }}>BS Information Systems</option>
-                                    <option value="BSECE" {{ old('course') == 'BSECE' ? 'selected' : '' }}>BS Electronics Engineering</option>
-                                </select>
+                                <input type="text" class="form-control @error('course') is-invalid @enderror" 
+                                    id="course" name="course" value="{{ old('course') }}" >
                                 @error('course')
                                     <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
+                                <small class="text-muted">Enter the course name (e.g., BS Information Technology)</small>
                             </div>
 
                             <div class="mb-3">
@@ -146,14 +141,26 @@ function toggleRoleFields() {
     teacherFields.style.display = 'none';
     
     if (role === 'student') {
-        studentFields.style.display = 'block';
-        document.getElementById('student_id').required = true;
-        document.getElementById('course').required = true;
-        document.getElementById('year_level').required = true;
-    } else if (role === 'teacher') {
-        teacherFields.style.display = 'block';
-        document.getElementById('teacher_id').required = true;
-    }
+    studentFields.style.display = 'block';
+    document.getElementById('student_id').required = true;
+    document.getElementById('course').required = true;
+    document.getElementById('year_level').required = true;
+} else if (role === 'teacher') {
+    teacherFields.style.display = 'block';
+    document.getElementById('teacher_id').required = true;
+    // Remove required from student fields when hidden
+    document.getElementById('student_id').required = false;
+    document.getElementById('course').required = false;
+    document.getElementById('year_level').required = false;
+} else {
+    // Admin or other – hide all extra fields and remove required
+    studentFields.style.display = 'none';
+    teacherFields.style.display = 'none';
+    document.getElementById('student_id').required = false;
+    document.getElementById('course').required = false;
+    document.getElementById('year_level').required = false;
+    document.getElementById('teacher_id').required = false;
+}
 }
 
 // Trigger on page load

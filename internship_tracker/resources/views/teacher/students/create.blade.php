@@ -64,14 +64,10 @@
                                     <div class="col-md-4">
                                         <div class="mb-3">
                                             <label for="course" class="form-label">Course <span class="text-danger">*</span></label>
-                                            <select class="form-control @error('course') is-invalid @enderror" name="course" required>
-                                                <option value="">Select Course</option>
-                                                <option value="BSIT" {{ old('course') == 'BSIT' ? 'selected' : '' }}>BS Information Technology</option>
-                                                <option value="BSCS" {{ old('course') == 'BSCS' ? 'selected' : '' }}>BS Computer Science</option>
-                                                <option value="BSIS" {{ old('course') == 'BSIS' ? 'selected' : '' }}>BS Information Systems</option>
-                                                <option value="BSECE" {{ old('course') == 'BSECE' ? 'selected' : '' }}>BS Electronics Engineering</option>
-                                            </select>
+                                            <input type="text" class="form-control @error('course') is-invalid @enderror" 
+                                                name="course" value="{{ old('course') }}" required>
                                             @error('course')<span class="invalid-feedback">{{ $message }}</span>@enderror
+                                            <small class="text-muted">Enter course name (e.g., BS Information Technology)</small>
                                         </div>
                                     </div>
                                     <div class="col-md-4">
