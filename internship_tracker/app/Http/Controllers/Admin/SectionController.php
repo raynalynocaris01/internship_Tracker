@@ -25,7 +25,6 @@ class SectionController extends Controller
     {
         $validated = $request->validate([
             'name' => 'required|string|max:255',
-            'code' => 'required|string|unique:sections|max:20',
             'year_level' => 'required|integer|min:1|max:4',
             'course' => 'required|string|max:255',   
             'max_students' => 'required|integer|min:1|max:60',
@@ -53,7 +52,6 @@ class SectionController extends Controller
     {
         $validated = $request->validate([
             'name' => 'required|string|max:255',
-            'code' => 'required|string|max:20|unique:sections,code,' . $section->id,
             'year_level' => 'required|integer|min:1|max:4',
             'course' => 'required|string|max:255',   
             'max_students' => 'required|integer|min:1|max:60',
