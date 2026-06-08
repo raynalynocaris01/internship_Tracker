@@ -13,15 +13,15 @@ class SubjectQRCode extends Model
 
     protected $table = 'subject_qrcodes';
 
-    protected $fillable = [
-        'subject_id',
-        'section_id',
-        'teacher_id',
-        'qr_token',
-        'session',
-        'valid_date',
-        'is_active',
-    ];
+   protected $fillable = [
+    'subject_id',
+    'section_id',
+    'teacher_id',
+    'session',
+    'valid_date',
+    'qr_token',
+    'is_active',
+];
 
     protected $casts = [
         'valid_date' => 'date',

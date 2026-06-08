@@ -83,6 +83,9 @@
             .main-content {
                 margin-left: 0;
             }
+            .navbar-custom {
+                margin-left: 0 !important;
+            }
         }
         
         /* Card Stats */
@@ -159,6 +162,7 @@
                        href="{{ route('student.history') }}">
                         <i class="fas fa-history"></i> Attendance History
                     </a>
+                   
                 @endif
             @endauth
         </nav>

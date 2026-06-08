@@ -9,8 +9,9 @@ use App\Models\StudentQRCode;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use GuzzleHttp\Client;
 use App\Models\SubjectQRCode;
-
+use Zxing\QrReader;
 // QR Code package
 use SimpleSoftwareIO\QrCode\Facades\QrCode;
 
@@ -39,10 +40,17 @@ class AttendanceController extends Controller
             ['qr_code' => $this->generateUniqueQRCode(), 'status' => 'active']
         );
         
-        // Today's attendance
-        $todayAttendance = Attendance::where('student_id', $student->id)
-            ->where('internship_id', $internship->id)  // Changed from enrollment_id
+        // Today's attendance (separate sessions)
+        $todayAM = Attendance::where('student_id', $student->id)
+            ->where('internship_id', $internship->id)
             ->whereDate('date', Carbon::today())
+            ->where('session', 'AM')
+            ->first();
+
+        $todayPM = Attendance::where('student_id', $student->id)
+            ->where('internship_id', $internship->id)
+            ->whereDate('date', Carbon::today())
+            ->where('session', 'PM')
             ->first();
         
         // Recent attendance (last 10 records)
@@ -69,8 +77,9 @@ class AttendanceController extends Controller
         $qrCodeImage = $this->generateQRCodeImage($qrCode->qr_code);
         
         return view('student.dashboard', compact(
-            'student', 'internship', 'qrCode', 'qrCodeImage',  // Changed 'enrollment' to 'internship'
-            'todayAttendance', 'recentAttendance', 'totalHours', 
+            'student', 'internship', 'qrCode', 'qrCodeImage',  
+            'todayAM', 'todayPM',  
+       'recentAttendance', 'totalHours', 
             'totalDays', 'progress', 'requiredHours', 'remainingHours'
         ));
     }
@@ -432,4 +441,10 @@ class AttendanceController extends Controller
             'student'    => $student,
         ]);
     }
+
+
+public function showScanner()
+{
+    return view('student.scanner');
+}
 }

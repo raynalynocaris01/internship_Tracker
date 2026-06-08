@@ -78,6 +78,7 @@ Route::middleware(['role:teacher'])->prefix('teacher')->name('teacher.')->group(
         Route::post('/attendance/timeout', [StudentAttendanceController::class, 'timeOut'])->name('attendance.timeout');
         Route::get('/history', [StudentAttendanceController::class, 'attendanceHistory'])->name('history');
         Route::get('attendance/scan/{token}', [StudentAttendanceController::class, 'scan'])->name('attendance.scan');
+        Route::get('/scan', [StudentAttendanceController::class, 'showScanner'])->name('scan');
     });
     
     // Single dashboard route that redirects based on role

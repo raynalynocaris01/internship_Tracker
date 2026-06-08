@@ -53,75 +53,81 @@
                         <div class="card text-white bg-warning">
                             <div class="card-header">Subject</div>
                             <div class="card-body">
-                                <h5 class="card-title">{{ $internship->subject->code }}</h5>  <!-- Changed from $enrollment -->
-                                <p class="card-text">{{ $internship->subject->name }}</p>  <!-- Changed from $enrollment -->
+                                <h5 class="card-title">{{ $internship->subject->code }}</h5>
+                                <p class="card-text">{{ $internship->subject->name }}</p>
                                 <p class="card-text">Days Rendered: {{ $totalDays }}</p>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <!-- QR Code and Time Tracking -->
-                <div class="row">
-                    <div class="col-md-5 mb-4">
-                        <div class="card text-center">
-                            <div class="card-header">
-                                <h5><i class="fas fa-qrcode"></i> My QR Code</h5>
-                            </div>
-                            <div class="card-body">
-                                <div class="qr-container mb-3 text-center">
-                                    {!! $qrCodeImage !!}
-                                </div>
-                                <p class="text-muted">Scan this QR code to time in/out</p>
-                                <p class="text-muted small">QR Code Value: <strong>{{ $qrCode->qr_code }}</strong></p>
-                                <button class="btn btn-sm btn-secondary" onclick="window.print()">
-                                    <i class="fas fa-print"></i> Print QR Code
-                                </button>
-                            </div>
-                        </div>
+                <!-- Scan QR Code Button -->
+                <div class="mb-3">
+                    <a href="{{ route('student.scan') }}" class="btn btn-primary">
+                        <i class="fas fa-qrcode"></i> Scan QR Code
+                    </a>
+                </div>
+
+                <!-- Today's Attendance (AM + PM) -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5><i class="fas fa-clock"></i> Today's Attendance</h5>
                     </div>
-                    
-                    <div class="col-md-7 mb-4">
-                        <div class="card">
-                            <div class="card-header">
-                                <h5><i class="fas fa-clock"></i> Today's Attendance</h5>
-                            </div>
-                            <div class="card-body text-center">
-                                @if($todayAttendance)
-                                    @if($todayAttendance->time_in && !$todayAttendance->time_out)
-                                        <div class="alert alert-info">
-                                            <i class="fas fa-check-circle fa-2x mb-2"></i>
-                                            <h5>You are currently TIMED IN</h5>
-                                            <p>Time in: {{ \Carbon\Carbon::parse($todayAttendance->time_in)->format('h:i A') }}</p>
-                                            <button class="btn btn-danger btn-lg" id="timeOutBtn">
-                                                <i class="fas fa-sign-out-alt"></i> Time Out
-                                            </button>
-                                        </div>
-                                    @elseif($todayAttendance->time_out)
-                                        <div class="alert alert-success">
-                                            <i class="fas fa-check-double fa-2x mb-2"></i>
-                                            <h5>Attendance Completed for Today</h5>
-                                            <p>Time in: {{ \Carbon\Carbon::parse($todayAttendance->time_in)->format('h:i A') }}</p>
-                                            <p>Time out: {{ \Carbon\Carbon::parse($todayAttendance->time_out)->format('h:i A') }}</p>
-                                            <p>Hours worked: <strong>{{ number_format($todayAttendance->hours_worked, 2) }}</strong></p>
-                                        </div>
-                                    @endif
-                                @else
-                                    <div class="alert alert-secondary">
-                                        <i class="fas fa-clock fa-2x mb-2"></i>
-                                        <h5>Not yet timed in today</h5>
-                                        <p>Click the button below to time in</p>
-                                        <button class="btn btn-success btn-lg" id="timeInBtn">
-                                            <i class="fas fa-sign-in-alt"></i> Time In
-                                        </button>
-                                    </div>
-                                @endif
-                            </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-bordered text-center">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Session</th>
+                                        <th>Time In</th>
+                                        <th>Time Out</th>
+                                        <th>Hours Worked</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {{-- AM Row --}}
+                                    <tr>
+                                        <td><span class="badge bg-warning text-dark">AM</span></td>
+                                        @if($todayAM)
+                                            <td>{{ \Carbon\Carbon::parse($todayAM->time_in)->format('h:i A') }}</td>
+                                            <td>{{ $todayAM->time_out ? \Carbon\Carbon::parse($todayAM->time_out)->format('h:i A') : '—' }}</td>
+                                            <td><strong>{{ number_format($todayAM->hours_worked, 2) }}</strong> hrs</td>
+                                            <td>
+                                                <span class="badge bg-{{ $todayAM->status == 'present' ? 'success' : ($todayAM->status == 'late' ? 'warning' : 'secondary') }}">
+                                                    {{ ucfirst($todayAM->status) }}
+                                                </span>
+                                            </td>
+                                        @else
+                                            <td colspan="4" class="text-muted">Not yet recorded</td>
+                                        @endif
+                                    </tr>
+                                    {{-- PM Row --}}
+                                    <tr>
+                                        <td><span class="badge bg-primary">PM</span></td>
+                                        @if($todayPM)
+                                            <td>{{ \Carbon\Carbon::parse($todayPM->time_in)->format('h:i A') }}</td>
+                                            <td>{{ $todayPM->time_out ? \Carbon\Carbon::parse($todayPM->time_out)->format('h:i A') : '—' }}</td>
+                                            <td><strong>{{ number_format($todayPM->hours_worked, 2) }}</strong> hrs</td>
+                                            <td>
+                                                <span class="badge bg-{{ $todayPM->status == 'present' ? 'success' : ($todayPM->status == 'late' ? 'warning' : 'secondary') }}">
+                                                    {{ ucfirst($todayPM->status) }}
+                                                </span>
+                                            </td>
+                                        @else
+                                            <td colspan="4" class="text-muted">Not yet recorded</td>
+                                        @endif
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="alert alert-info mt-3 mb-0 small">
+                            <i class="fas fa-info-circle"></i> Use the <strong>Scan QR Code</strong> button above to record your attendance (AM/PM).
                         </div>
                     </div>
                 </div>
 
-                <!-- Recent Attendance Records -->
+                <!-- Recent Attendance Records (with Session column) -->
                 <div class="card">
                     <div class="card-header">
                         <h5><i class="fas fa-history"></i> Recent Attendance Records</h5>
@@ -132,6 +138,7 @@
                                 <thead>
                                     <tr>
                                         <th>Date</th>
+                                        <th>Session</th>
                                         <th>Time In</th>
                                         <th>Time Out</th>
                                         <th>Hours</th>
@@ -141,10 +148,19 @@
                                 <tbody>
                                     @forelse($recentAttendance as $attendance)
                                     <tr>
-                                        <td>{{ \Carbon\Carbon::parse($attendance->date)->format('F d, Y') }}</td>
+                                        <td>{{ \Carbon\Carbon::parse($attendance->date)->format('F d, Y') }}<br>
+                                            <small class="text-muted">{{ \Carbon\Carbon::parse($attendance->date)->format('l') }}</small>
+                                        </td>
+                                        <td class="text-center">
+                                            @if(($attendance->session ?? '') === 'AM')
+                                                <span class="badge bg-warning text-dark">AM</span>
+                                            @else
+                                                <span class="badge bg-primary">PM</span>
+                                            @endif
+                                        </td>
                                         <td>{{ \Carbon\Carbon::parse($attendance->time_in)->format('h:i A') }}</td>
                                         <td>{{ $attendance->time_out ? \Carbon\Carbon::parse($attendance->time_out)->format('h:i A') : 'Still working' }}</td>
-                                        <td>{{ number_format($attendance->hours_worked, 2) }}</td>
+                                        <td><strong>{{ number_format($attendance->hours_worked, 2) }}</strong> hrs</td>
                                         <td>
                                             <span class="badge bg-{{ $attendance->status == 'present' ? 'success' : ($attendance->status == 'late' ? 'warning' : 'danger') }}">
                                                 {{ ucfirst($attendance->status) }}
@@ -153,7 +169,7 @@
                                     </tr>
                                     @empty
                                         <tr>
-                                            <td colspan="5" class="text-center text-muted">No attendance records yet.</td>
+                                            <td colspan="6" class="text-center text-muted">No attendance records yet.</td>
                                         </tr>
                                     @endforelse
                                 </tbody>
@@ -169,91 +185,8 @@
 
 @push('scripts')
 <script>
-function timeIn() {
-    const qrData = prompt('Please scan your QR code or enter the code below:\n\nYour QR Code: {{ $qrCode->qr_code ?? "N/A" }}\n\nFor testing, you can copy the QR code value above.');
-    
-    if (qrData) {
-        // Show loading indicator
-        const btn = document.getElementById('timeInBtn');
-        const originalText = btn?.innerHTML;
-        if (btn) {
-            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
-            btn.disabled = true;
-        }
-        
-        fetch('{{ route("student.attendance.timein") }}', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': '{{ csrf_token() }}',
-                'Accept': 'application/json'
-            },
-            body: JSON.stringify({qr_data: qrData})
-        })
-        .then(response => response.json())
-        .then(data => {
-            alert(data.message);
-            if(data.success) location.reload();
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            alert('Error: ' + error.message);
-        })
-        .finally(() => {
-            if (btn) {
-                btn.innerHTML = originalText;
-                btn.disabled = false;
-            }
-        });
-    }
-}
-
-function timeOut() {
-    if(confirm('Are you sure you want to time out?')) {
-        const btn = document.getElementById('timeOutBtn');
-        const originalText = btn?.innerHTML;
-        if (btn) {
-            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
-            btn.disabled = true;
-        }
-        
-        fetch('{{ route("student.attendance.timeout") }}', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': '{{ csrf_token() }}',
-                'Accept': 'application/json'
-            }
-        })
-        .then(response => response.json())
-        .then(data => {
-            alert(data.message);
-            if(data.success) location.reload();
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            alert('Error: ' + error.message);
-        })
-        .finally(() => {
-            if (btn) {
-                btn.innerHTML = originalText;
-                btn.disabled = false;
-            }
-        });
-    }
-}
-
-// Add event listeners when DOM is loaded
-document.addEventListener('DOMContentLoaded', function() {
-    const timeInBtn = document.getElementById('timeInBtn');
-    const timeOutBtn = document.getElementById('timeOutBtn');
-    
-    if (timeInBtn) {
-        timeInBtn.addEventListener('click', timeIn);
-    }
-    if (timeOutBtn) {
-        timeOutBtn.addEventListener('click', timeOut);
-    }
-});
+// No inline timeIn/timeOut functions needed – students must use the scanner.
+// If you still want the old buttons, remove the alert and keep the previous logic.
+// However, the scanner is the intended flow.
 </script>
 @endpush

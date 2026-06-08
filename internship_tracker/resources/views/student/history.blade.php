@@ -12,7 +12,7 @@
         </div>
 
         <div class="card-body">
-            <!-- Statistics Summary -->
+            <!-- Statistics Summary (unchanged) -->
             <div class="row mb-4">
                 <div class="col-md-4">
                     <div class="card text-white bg-primary">
@@ -45,12 +45,13 @@
                 </div>
             </div>
 
-            <!-- Attendance Records Table -->
+            <!-- Attendance Records Table with Session column -->
             <div class="table-responsive">
                 <table class="table table-hover">
                     <thead>
                         <tr>
                             <th>Date</th>
+                            <th>Session</th>
                             <th>Time In</th>
                             <th>Time Out</th>
                             <th>Hours Worked</th>
@@ -66,6 +67,13 @@
                                 <br>
                                 <small class="text-muted">{{ \Carbon\Carbon::parse($attendance->date)->format('l') }}</small>
                             </td>
+                            <td>
+                                @if(($attendance->session ?? '') === 'AM')
+                                    <span class="badge bg-warning text-dark">AM</span>
+                                @else
+                                    <span class="badge bg-primary">PM</span>
+                                @endif
+                            </td>
                             <td>{{ \Carbon\Carbon::parse($attendance->time_in)->format('h:i A') }}</td>
                             <td>
                                 @if($attendance->time_out)
@@ -74,9 +82,7 @@
                                     <span class="badge bg-warning">Still working</span>
                                 @endif
                             </td>
-                            <td>
-                                <strong>{{ number_format($attendance->hours_worked, 2) }}</strong> hrs
-                            </td>
+                            <td><strong>{{ number_format($attendance->hours_worked, 2) }}</strong> hrs</td>
                             <td>
                                 @if($attendance->status == 'present')
                                     <span class="badge bg-success">Present</span>
@@ -97,19 +103,19 @@
                             </td>
                         </tr>
                         @empty
-                        <tr>
-                            <td colspan="6" class="text-center text-muted py-5">
-                                <i class="fas fa-clock fa-3x mb-3"></i>
-                                <p>No attendance records found.</p>
-                                <p class="small">Start by scanning your QR code to time in.</p>
-                            </td>
-                        </tr>
+                            <tr>
+                                <td colspan="7" class="text-center text-muted py-5">
+                                    <i class="fas fa-clock fa-3x mb-3"></i>
+                                    <p>No attendance records found.</p>
+                                    <p class="small">Start by scanning your QR code to time in.</p>
+                                 </td>
+                            </tr>
                         @endforelse
                     </tbody>
                 </table>
             </div>
 
-            <!-- Pagination -->
+            <!-- Pagination (unchanged) -->
             <div class="mt-3 d-flex justify-content-between align-items-center">
                 <div>
                     Showing {{ $attendances->firstItem() ?? 0 }} to {{ $attendances->lastItem() ?? 0 }} 
@@ -133,10 +139,3 @@
     </div>
 </div>
 @endsection
-
-@push('scripts')
-<script>
-    // Optional: Add chart for attendance trends
-    // You can add Chart.js integration here if needed
-</script>
-@endpush
