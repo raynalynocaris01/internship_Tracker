@@ -17,7 +17,7 @@ class SectionSeeder extends Seeder
         ];
 
         foreach ($sections as $section) {
-            Section::create($section);
+            Section::updateOrCreate($section);
         }
     }
 }
