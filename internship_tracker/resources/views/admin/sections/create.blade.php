@@ -37,14 +37,9 @@
                         <div class="row">
                             <div class="col-md-6 mb-3">
                                 <label for="course" class="form-label">Course *</label>
-                                <select class="form-control @error('course') is-invalid @enderror" 
-                                        id="course" name="course" required>
-                                    <option value="">Select Course</option>
-                                    <option value="BSIT" {{ old('course') == 'BSIT' ? 'selected' : '' }}>BS Information Technology</option>
-                                    <option value="BSCS" {{ old('course') == 'BSCS' ? 'selected' : '' }}>BS Computer Science</option>
-                                    <option value="BSIS" {{ old('course') == 'BSIS' ? 'selected' : '' }}>BS Information Systems</option>
-                                    <option value="BSECE" {{ old('course') == 'BSECE' ? 'selected' : '' }}>BS Electronics Engineering</option>
-                                </select>
+                                <input type="text" class="form-control @error('course') is-invalid @enderror" 
+                                       id="course" name="course" value="{{ old('course') }}" placeholder="e.g., BS Information Technology" required>
+                                <small class="text-muted">Enter the course name (e.g., BS Information Technology)</small>
                                 @error('course')
                                     <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
