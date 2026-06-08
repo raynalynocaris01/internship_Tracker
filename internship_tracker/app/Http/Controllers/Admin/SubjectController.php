@@ -28,6 +28,7 @@ class SubjectController extends Controller
 
     public function store(Request $request)
     {
+
         $validated = $request->validate([
             'code' => 'required|string|unique:subjects|max:20',
             'name' => 'required|string|max:255',
@@ -38,8 +39,8 @@ class SubjectController extends Controller
             'school_year' => 'required|integer|min:2000|max:2100',
             'status' => 'required|in:active,inactive',
             'assignments' => 'nullable|array',
-            'assignments.*.section_id' => 'required_with:assignments.*|exists:sections,id',
-            'assignments.*.teacher_id' => 'required_with:assignments.*|exists:users,id',
+            'assignments.*.section_id' => 'nullable|exists:sections,id',
+            'assignments.*.teacher_id' => 'nullable|exists:users,id',
             'assignments.*.status' => 'nullable|in:active,inactive',
         ]);
 

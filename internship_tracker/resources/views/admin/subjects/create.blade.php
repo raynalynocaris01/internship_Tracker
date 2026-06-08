@@ -140,7 +140,7 @@
                                         <tbody id="assignmentsBody">
                                             <tr id="rowTemplate" style="display: none;">
                                                 <td>
-                                                    <select name="assignments[0][section_id]" class="form-control section-select" required>
+                                                    <select name="assignments[0][section_id]" class="form-control section-select" >
                                                         <option value="">Select Section</option>
                                                         @foreach($sections as $section)
                                                             <option value="{{ $section->id }}">{{ $section->name }} ({{ $section->course }} - Year {{ $section->year_level }})</option>
@@ -148,7 +148,7 @@
                                                     </select>
                                                 </td>
                                                 <td>
-                                                    <select name="assignments[0][teacher_id]" class="form-control teacher-select" required>
+                                                    <select name="assignments[0][teacher_id]" class="form-control teacher-select" >
                                                         <option value="">Select Teacher</option>
                                                         @foreach($teachers as $teacher)
                                                             <option value="{{ $teacher->id }}">{{ $teacher->name }} ({{ $teacher->teacher_id }})</option>
