@@ -3,7 +3,8 @@
     "builder": "RAILPACK"
   },
   
+ 
   "deploy": {
-    "startCommand": "php artisan migrate --force && php artisan config:cache && php artisan route:cache && php artisan view:cache && frankenphp run --listen=0.0.0.0:3000"
+    "startCommand": "php artisan migrate --force && php artisan config:cache && php artisan route:cache && php artisan view:cache && php -S 0.0.0.0:3000 -t public"
   }
 }
