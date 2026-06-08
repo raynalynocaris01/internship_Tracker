@@ -26,18 +26,18 @@ class AdminSeeder extends Seeder
             ]
         );
 
-        // Create additional admin (optional)
-        User::updateOrCreate(
-            ['email' => 'superadmin@gmail.com'],
-            [
-                'name' => 'Super Admin',
-                'email' => 'superadmin@gmail.com',
-                'password' => Hash::make('admin123'),
-                'role' => 'admin',
-                'department' => 'IT Department',
-                'email_verified_at' => now(),
-            ]
-        );
+        // // Create additional admin (optional)
+        // User::updateOrCreate(
+        //     ['email' => 'superadmin@gmail.com'],
+        //     [
+        //         'name' => 'Super Admin',
+        //         'email' => 'superadmin@gmail.com',
+        //         'password' => Hash::make('admin123'),
+        //         'role' => 'admin',
+        //         'department' => 'IT Department',
+        //         'email_verified_at' => now(),
+        //     ]
+        // );
 
         $this->command->info('Admin users seeded successfully!');
         $this->command->info('Admin Email: admin@gmail.com');
