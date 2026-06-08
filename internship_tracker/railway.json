@@ -1,10 +1,5 @@
 {
   "build": {
     "builder": "RAILPACK"
-  },
-  "deploy": {
-    "startCommand": "php artisan migrate --force && php artisan config:clear && php artisan cache:clear && php artisan config:cache && php artisan route:cache && php artisan view:cache && php -d output_buffering=On -S 0.0.0.0:${PORT:-8080} -t public",
-    "healthcheckPath": "/login",
-    "healthcheckTimeout": 30
   }
 }
