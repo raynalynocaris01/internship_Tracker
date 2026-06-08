@@ -144,11 +144,7 @@
                                                         <a href="{{ route('teacher.students.show', $student) }}" class="btn btn-info" title="View Details">
                                                             <i class="fas fa-eye"></i>
                                                         </a>
-                                                        @if($hasInternship)
-                                                        <a href="{{ route('teacher.students.attendance.create', $student) }}" class="btn btn-success" title="Manual Time In/Out">
-                                                            <i class="fas fa-clock"></i>
-                                                        </a>
-                                                    @endif
+                                        
                                                         @if(!$hasInternship)
                                                             <button type="button" class="btn btn-primary assign-single"
                                                                     data-bs-toggle="modal" data-bs-target="#singleAssignModal"

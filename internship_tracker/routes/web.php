@@ -10,6 +10,7 @@ use App\Http\Controllers\Teacher\DashboardController as TeacherDashboardControll
 use App\Http\Controllers\Teacher\StudentController as TeacherStudentController;
 use App\Http\Controllers\Student\AttendanceController as StudentAttendanceController;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Teacher\SubjectQRCodeController;
 
 // Custom login route
 Route::get('/login', function () {
@@ -61,7 +62,11 @@ Route::middleware(['role:teacher'])->prefix('teacher')->name('teacher.')->group(
     Route::post('/students/{student}/attendance/manual', [App\Http\Controllers\Teacher\AttendanceController::class, 'manualAttendance'])->name('students.attendance.manual');
     Route::post('/students/{student}/attendance/timein', [App\Http\Controllers\Teacher\AttendanceController::class, 'timeIn'])->name('students.attendance.timein');
     Route::post('/students/{student}/attendance/timeout', [App\Http\Controllers\Teacher\AttendanceController::class, 'timeOut'])->name('students.attendance.timeout');
-    
+    // Subject QR Codes
+    Route::post('qrcode/generate', [SubjectQRCodeController::class, 'generate'])->name('qrcode.generate');
+    Route::get('qrcode/{qrCode}', [SubjectQRCodeController::class, 'show'])->name('qrcode.show');
+    Route::post('qrcode/{qrCode}/deactivate', [SubjectQRCodeController::class, 'deactivate'])->name('qrcode.deactivate');
+    Route::get('qrcode/{qrCode}/scans', [SubjectQRCodeController::class, 'recentScans'])->name('qrcode.scans');
     // Delete student
     Route::delete('/students/{student}', [TeacherStudentController::class, 'destroy'])->name('students.destroy');
 });
@@ -72,6 +77,7 @@ Route::middleware(['role:teacher'])->prefix('teacher')->name('teacher.')->group(
         Route::post('/attendance/timein', [StudentAttendanceController::class, 'timeIn'])->name('attendance.timein');
         Route::post('/attendance/timeout', [StudentAttendanceController::class, 'timeOut'])->name('attendance.timeout');
         Route::get('/history', [StudentAttendanceController::class, 'attendanceHistory'])->name('history');
+        Route::get('attendance/scan/{token}', [StudentAttendanceController::class, 'scan'])->name('attendance.scan');
     });
     
     // Single dashboard route that redirects based on role

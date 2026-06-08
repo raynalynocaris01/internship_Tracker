@@ -9,6 +9,7 @@ use App\Models\StudentQRCode;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use App\Models\SubjectQRCode;
 
 // QR Code package
 use SimpleSoftwareIO\QrCode\Facades\QrCode;
@@ -324,5 +325,111 @@ class AttendanceController extends Controller
                 'Content-Type' => 'image/png',
                 'Content-Disposition' => 'attachment; filename="qrcode.png"',
             ]);
+    }
+
+    public function scan(string $token)
+    {
+        $student = auth()->user();
+ 
+        // Validate the QR token
+        $qrCode = \App\Models\SubjectQRCode::where('qr_token', $token)
+            ->where('is_active', true)
+            ->whereDate('valid_date', \Carbon\Carbon::today())
+            ->with(['subject', 'section'])
+            ->first();
+ 
+        if (!$qrCode) {
+            return view('student.scan', [
+                'success' => false,
+                'error'   => 'This QR code is invalid or has expired. Ask your teacher to refresh it.',
+                'qrCode'  => null,
+            ]);
+        }
+ 
+        // Check if this student has an active internship for this subject+section
+        $internship = \App\Models\Internship::where('student_id', $student->id)
+            ->where('subject_id', $qrCode->subject_id)
+            ->where('section_id', $qrCode->section_id)
+            ->where('status', 'active')
+            ->first();
+ 
+        if (!$internship) {
+            // Not registered — show a "not enrolled" message
+            return view('student.scan', [
+                'success'    => false,
+                'notEnrolled'=> true,
+                'error'      => "You are not registered for {$qrCode->subject->code} - {$qrCode->subject->name} ({$qrCode->section->name}). Please contact your teacher.",
+                'qrCode'     => $qrCode,
+                'student'    => $student,
+            ]);
+        }
+ 
+        $now     = \Carbon\Carbon::now();
+        $today   = $now->toDateString();
+        $session = $qrCode->session; // AM or PM
+ 
+        // Check for existing record
+        $existing = \App\Models\Attendance::where('student_id', $student->id)
+            ->where('internship_id', $internship->id)
+            ->where('date', $today)
+            ->where('session', $session)
+            ->first();
+ 
+        // Already fully done (time_in + time_out recorded)
+        if ($existing && $existing->time_in && $existing->time_out) {
+            return view('student.scan', [
+                'success'    => true,
+                'alreadyDone'=> true,
+                'message'    => "You have already completed your {$session} attendance for today.",
+                'qrCode'     => $qrCode,
+                'attendance' => $existing,
+                'student'    => $student,
+            ]);
+        }
+ 
+        // Clocked in but not out → record time out
+        if ($existing && $existing->time_in && !$existing->time_out) {
+            $hoursWorked = round($now->diffInMinutes(\Carbon\Carbon::parse($existing->time_in)) / 60, 2);
+            $existing->update([
+                'time_out'     => $now,
+                'hours_worked' => $hoursWorked,
+            ]);
+ 
+            // Update internship total hours
+            $internship->total_hours_rendered = $internship->attendances()->sum('hours_worked');
+            $internship->save();
+ 
+            return view('student.scan', [
+                'success'    => true,
+                'action'     => 'timeout',
+                'message'    => "{$session} Time Out recorded at " . $now->format('h:i A') . " ({$hoursWorked} hrs)",
+                'qrCode'     => $qrCode,
+                'attendance' => $existing->fresh(),
+                'student'    => $student,
+            ]);
+        }
+ 
+        // No record yet → record time in
+        $lateHour  = $session === 'AM' ? 8 : 13;
+        $status    = $now->hour >= $lateHour ? 'late' : 'present';
+ 
+        $attendance = \App\Models\Attendance::create([
+            'student_id'    => $student->id,
+            'internship_id' => $internship->id,
+            'subject_id'    => $internship->subject_id,
+            'date'          => $today,
+            'session'       => $session,
+            'time_in'       => $now,
+            'status'        => $status,
+        ]);
+ 
+        return view('student.scan', [
+            'success'    => true,
+            'action'     => 'timein',
+            'message'    => "{$session} Time In recorded at " . $now->format('h:i A'),
+            'qrCode'     => $qrCode,
+            'attendance' => $attendance,
+            'student'    => $student,
+        ]);
     }
 }

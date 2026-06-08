@@ -285,4 +285,8 @@ class AttendanceController extends Controller
 
     return redirect()->back()->with('success', "{$session} Time Out recorded for {$student->name} at " . $now->format('h:i A') . " ({$hoursWorked} hrs)");
 }
+
+
+
+ 
 }

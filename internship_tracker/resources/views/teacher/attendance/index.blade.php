@@ -86,6 +86,40 @@
                              role="tabpanel">
 
                             @if($section->students->count() > 0)
+
+                                {{-- ── QR Code Generator for this section ── --}}
+                                @php
+                                    $firstEntry     = $section->students->first();
+                                    $sectionSubject = $firstEntry?->internship?->subject;
+                                    $sectionId      = $firstEntry?->internship?->section_id;
+                                    $subjectId      = $firstEntry?->internship?->subject_id;
+                                @endphp
+                                @if($sectionSubject && $sectionId)
+                                <div class="d-flex align-items-center gap-2 mb-3 p-2 bg-light rounded">
+                                    <span class="fw-bold text-muted small">
+                                        <i class="fas fa-qrcode"></i> Generate QR for this section:
+                                    </span>
+                                    <form method="POST" action="{{ route('teacher.qrcode.generate') }}" class="d-inline">
+                                        @csrf
+                                        <input type="hidden" name="subject_id" value="{{ $subjectId }}">
+                                        <input type="hidden" name="section_id" value="{{ $sectionId }}">
+                                        <input type="hidden" name="session" value="AM">
+                                        <button type="submit" class="btn btn-sm btn-outline-warning fw-bold">
+                                            <i class="fas fa-sun"></i> AM QR
+                                        </button>
+                                    </form>
+                                    <form method="POST" action="{{ route('teacher.qrcode.generate') }}" class="d-inline">
+                                        @csrf
+                                        <input type="hidden" name="subject_id" value="{{ $subjectId }}">
+                                        <input type="hidden" name="section_id" value="{{ $sectionId }}">
+                                        <input type="hidden" name="session" value="PM">
+                                        <button type="submit" class="btn btn-sm btn-outline-primary fw-bold">
+                                            <i class="fas fa-moon"></i> PM QR
+                                        </button>
+                                    </form>
+                                </div>
+                                @endif
+
                                 <div class="table-responsive">
                                     <table class="table table-hover align-middle mb-0">
                                         <thead class="table-light">
