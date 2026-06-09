@@ -18,21 +18,35 @@
                             <table class="table table-bordered">
                                 <tr>
                                     <th width="40%">Student</th>
-                                    <td>{{ $attendance->student->name }}</p>
+                                    <td>{{ $attendance->student->name ?? 'N/A' }}</p>
                                 </tr>
                                 <tr>
                                     <th>Student ID</th>
-                                    <td>{{ $attendance->student->student_id }}</p>
+                                    <td>{{ $attendance->student->student_id ?? 'N/A' }}</p>
                                 </tr>
                                 <tr>
                                     <th>Subject</th>
-                                    <td>{{ $attendance->internship->subject->code }} - {{ $attendance->internship->subject->name }}</p>
+                                    <td>{{ $attendance->internship->subject->code ?? 'N/A' }} - {{ $attendance->internship->subject->name ?? '' }}</p>
+                                </tr>
+                                <tr>
+                                    <th>Session</th>
+                                    <td>
+                                        @if(($attendance->session ?? '') == 'AM')
+                                            <span class="badge bg-warning text-dark"><i class="fas fa-sun"></i> AM</span>
+                                        @elseif(($attendance->session ?? '') == 'PM')
+                                            <span class="badge bg-primary"><i class="fas fa-moon"></i> PM</span>
+                                        @elseif(($attendance->session ?? '') == 'OT')
+                                            <span class="badge bg-danger"><i class="fas fa-clock"></i> OT</span>
+                                        @else
+                                            —
+                                        @endif
+                                    </p>
                                 </tr>
                                 <tr>
                                     <th>Date</th>
                                     <td>{{ \Carbon\Carbon::parse($attendance->date)->format('F d, Y') }}</p>
                                 </tr>
-                             </>
+                             </table>
                         </div>
                         <div class="col-md-6">
                             <table class="table table-bordered">
@@ -62,7 +76,7 @@
                                         </span>
                                     </p>
                                 </tr>
-                             ?>
+                             </table>
                         </div>
                     </div>
 
