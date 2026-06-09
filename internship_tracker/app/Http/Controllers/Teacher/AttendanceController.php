@@ -43,6 +43,49 @@ class AttendanceController extends Controller
             ->with(['student', 'subject', 'section'])
             ->get();
 
+        $now = Carbon::now();
+        $amCutoff = Carbon::today()->setTime(12, 00);
+        $pmCutoff = Carbon::today()->setTime(17, 00);
+
+        // Auto‑timeout AM sessions that are still open
+        $openAM = Attendance::whereIn('internship_id', $internshipIds)
+            ->whereDate('date', $today)
+            ->where('session', 'AM')
+            ->whereNull('time_out')
+            ->get();
+
+        foreach ($openAM as $attendance) {
+            if ($now->gte($amCutoff)) {
+                $attendance->time_out = $amCutoff;
+                $attendance->save();
+                $attendance->calculateHours(); // if you have this method, or recalc manually
+                // Update internship totals
+                $this->recalcInternshipHours($attendance->internship);
+            }
+        }
+
+        // Auto‑timeout PM sessions that are still open
+        $openPM = Attendance::whereIn('internship_id', $internshipIds)
+            ->whereDate('date', $today)
+            ->where('session', 'PM')
+            ->whereNull('time_out')
+            ->get();
+
+        foreach ($openPM as $attendance) {
+            if ($now->gte($pmCutoff)) {
+                $attendance->time_out = $pmCutoff;
+                $attendance->save();
+                $attendance->calculateHours();
+                $this->recalcInternshipHours($attendance->internship);
+            }
+        }
+
+        // After this, re‑fetch $todayRecords to include the newly closed records
+        $todayRecords = Attendance::whereIn('internship_id', $internshipIds)
+            ->whereDate('date', $today)
+            ->get()
+            ->groupBy(fn($a) => $a->student_id . '_' . ($a->session ?? 'AM'));
+
         $sections = collect();
         foreach ($allSections as $section) {
             $sectionObj           = new \stdClass();
@@ -144,7 +187,7 @@ class AttendanceController extends Controller
         if (!$hoursWorked && $validated['time_out']) {
             $timeIn      = Carbon::parse($validated['date'] . ' ' . $validated['time_in']);
             $timeOut     = Carbon::parse($validated['date'] . ' ' . $validated['time_out']);
-            $hoursWorked = round($timeIn->diffInMinutes($timeOut) / 60, 2);
+            $hoursWorked = round(abs($timeIn->diffInMinutes($timeOut)) / 60, 2);
         }
 
         Attendance::create([
@@ -239,51 +282,70 @@ class AttendanceController extends Controller
             ->with('success', "{$session} Time In recorded for {$student->name} at " . $now->format('h:i A'));
     }
 
-    public function timeOut(Request $request, User $student)
-    {
-        $teacherId  = auth()->id();
-        $internship = Internship::where('student_id', $student->id)
-            ->where('teacher_id', $teacherId)->first();
+  public function timeOut(Request $request, User $student)
+{
+    $teacherId  = auth()->id();
+    $internship = Internship::where('student_id', $student->id)
+        ->where('teacher_id', $teacherId)->first();
 
-        if (!$internship) {
-            return redirect()->back()->with('error', 'Student not under your supervision.');
-        }
-
-        $now     = Carbon::now();
-        $today   = $now->toDateString();
-        $session = strtoupper($request->input('session', ''));
-        if (!in_array($session, ['AM', 'PM', 'OT'])) {
-            // Auto‑detect based on current time
-            if ($now->hour < 12) $session = 'AM';
-            elseif ($now->hour < 18) $session = 'PM';
-            else $session = 'OT';
-        }
-
-        $attendance = Attendance::where('student_id', $student->id)
-            ->where('internship_id', $internship->id)
-            ->where('date', $today)
-            ->where('session', $session)
-            ->whereNull('time_out')
-            ->first();
-
-        if (!$attendance) {
-            return redirect()->back()
-                ->with('error', "No open {$session} time-in found for {$student->name} today.");
-        }
-
-        $timeIn = Carbon::parse($attendance->time_in);
-        $hoursWorked = round($timeIn->diffInMinutes($now) / 60, 2);
-
-        $attendance->update([
-            'time_out'     => $now,
-            'hours_worked' => $hoursWorked,
-        ]);
-
-        $this->recalcInternshipHours($internship);
-
-        return redirect()->back()
-            ->with('success', "{$session} Time Out recorded for {$student->name} at " . $now->format('h:i A') . " ({$hoursWorked} hrs)");
+    if (!$internship) {
+        return redirect()->back()->with('error', 'Student not under your supervision.');
     }
+
+    $now     = Carbon::now();
+    $today   = $now->toDateString();
+    $session = strtoupper($request->input('session', ''));
+
+    // If session not provided or invalid, auto-detect
+    if (!in_array($session, ['AM', 'PM', 'OT'])) {
+        if ($now->hour < 12) $session = 'AM';
+        elseif ($now->hour < 18) $session = 'PM';
+        else $session = 'OT';
+    }
+
+    // Override with the exact button value if it's valid (teacher's choice)
+    $buttonSession = strtoupper($request->input('session', ''));
+    if (in_array($buttonSession, ['AM', 'PM', 'OT'])) {
+        $session = $buttonSession;
+    }
+
+    // Find the open attendance record for that session
+    $attendance = Attendance::where('student_id', $student->id)
+        ->where('internship_id', $internship->id)
+        ->where('date', $today)
+        ->where('session', $session)
+        ->whereNull('time_out')
+        ->first();
+
+    if (!$attendance) {
+        return redirect()->back()
+            ->with('error', "No open {$session} time-in found for {$student->name} today.");
+    }
+
+    $timeIn = Carbon::parse($attendance->time_in);
+    $hoursWorked = round(abs($timeIn->diffInMinutes($now)) / 60, 2);
+
+    // ✅ Log after variables are defined
+    \Log::info('TimeOut Debug', [
+        'student' => $student->name,
+        'session' => $session,
+        'attendance_id' => $attendance->id,
+        'time_in' => $attendance->time_in,
+        'now' => $now,
+        'diff_minutes' => $timeIn->diffInMinutes($now),
+        'hours_worked' => $hoursWorked,
+    ]);
+
+    $attendance->update([
+        'time_out'     => $now,
+        'hours_worked' => $hoursWorked,
+    ]);
+
+    $this->recalcInternshipHours($internship);
+
+    return redirect()->back()
+        ->with('success', "{$session} Time Out recorded for {$student->name} at " . $now->format('h:i A') . " ({$hoursWorked} hrs)");
+}
 
     /**
      * Recalculate and save internship total_hours_rendered from all attendance records.

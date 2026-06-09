@@ -125,31 +125,19 @@ class Attendance extends Model
 
     // Helper Methods
     public function calculateHours()
-    {
-        if ($this->time_in && $this->time_out) {
-            $timeIn = Carbon::parse($this->time_in);
-            $timeOut = Carbon::parse($this->time_out);
-            $diffInSeconds = $timeOut->diffInSeconds($timeIn);
-            
-            // Calculate hours
-            $hours = $diffInSeconds / 3600;
-            
-            // Subtract 1 hour for lunch if worked more than 5 hours
-            if ($hours > 5) {
-                $hours -= 1;
-            }
-            
-            $this->hours_worked = round($hours, 2);
-            $this->save();
-            
-            // Update internship total hours (changed from enrollment)
-            if ($this->internship) {
-                $this->internship->updateTotalHours();
-            }
-        }
-        
-        return $this->hours_worked;
+{
+    if ($this->time_in && $this->time_out) {
+        $timeIn = Carbon::parse($this->time_in);
+        $timeOut = Carbon::parse($this->time_out);
+        $diffInSeconds = abs($timeOut->diffInSeconds($timeIn));
+        $hours = $diffInSeconds / 3600;
+        if ($hours > 5) $hours -= 1;
+        $this->hours_worked = round($hours, 2);
+        $this->save();
+        // ✅ Do NOT call anything here – controller will update internship totals
     }
+    return $this->hours_worked;
+}
 
     public function isTimedIn()
     {

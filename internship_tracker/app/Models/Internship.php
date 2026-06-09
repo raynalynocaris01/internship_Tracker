@@ -194,4 +194,5 @@ class Internship extends Model
             ->whereBetween('date', [Carbon::now()->startOfWeek(), Carbon::now()->endOfWeek()])
             ->get();
     }
+    
 }

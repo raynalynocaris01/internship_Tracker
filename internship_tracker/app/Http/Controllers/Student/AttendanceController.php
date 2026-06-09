@@ -60,10 +60,10 @@ class AttendanceController extends Controller
     
     // ========== AUTO TIMEOUT (Option 3) ==========
     $now = Carbon::now();
-    $amCutoff = Carbon::today()->setTime(12, 15);  // 12:15 PM
-    $pmCutoff = Carbon::today()->setTime(17, 15);  // 5:15 PM
+    $amCutoff = Carbon::today()->setTime(12, 00);  // 12:00 PM
+    $pmCutoff = Carbon::today()->setTime(17, 00);  // 5:00 PM
 
-    // Auto-timeout AM session if after 12:15 and still open
+    // Auto-timeout AM session if after 12:00 and still open
     if ($todayAM && !$todayAM->time_out && $now->gte($amCutoff)) {
         $todayAM->time_out = $amCutoff;
         $todayAM->save();
@@ -72,7 +72,7 @@ class AttendanceController extends Controller
         $todayAM = $todayAM->fresh();
     }
 
-    // Auto-timeout PM session if after 17:15 and still open
+    // Auto-timeout PM session if after 17:00 and still open
     if ($todayPM && !$todayPM->time_out && $now->gte($pmCutoff)) {
         $todayPM->time_out = $pmCutoff;
         $todayPM->save();
@@ -275,7 +275,7 @@ class AttendanceController extends Controller
         if ($attendance->time_in && $attendance->time_out) {
             $timeIn = Carbon::parse($attendance->time_in);
             $timeOut = Carbon::parse($attendance->time_out);
-            $diffInSeconds = $timeOut->diffInSeconds($timeIn);
+            $diffInSeconds = abs($timeOut->diffInSeconds($timeIn));
             
             // Calculate hours
             $hours = $diffInSeconds / 3600;
@@ -442,7 +442,7 @@ class AttendanceController extends Controller
  
         // Clocked in but not out → record time out
         if ($existing && $existing->time_in && !$existing->time_out) {
-            $hoursWorked = round($now->diffInMinutes(\Carbon\Carbon::parse($existing->time_in)) / 60, 2);
+            $hoursWorked = round(abs($now->diffInMinutes(\Carbon\Carbon::parse($existing->time_in))) / 60, 2);
             $existing->update([
                 'time_out'     => $now,
                 'hours_worked' => $hoursWorked,
