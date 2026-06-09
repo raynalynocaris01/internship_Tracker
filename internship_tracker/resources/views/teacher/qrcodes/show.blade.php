@@ -18,13 +18,15 @@
                         {{ $qrCode->subject->code }} — {{ $qrCode->section->name }}
                     </h4>
                     <small>
-                        @if($qrCode->session === 'AM')
-                            <i class="fas fa-sun text-warning"></i> Morning (AM) Session
-                        @else
-                            <i class="fas fa-moon"></i> Afternoon (PM) Session
-                        @endif
-                        &nbsp;|&nbsp; {{ $qrCode->valid_date->format('F d, Y') }}
-                    </small>
+                    @if($qrCode->session === 'AM')
+                        <i class="fas fa-sun text-warning"></i> Morning (AM) Session
+                    @elseif($qrCode->session === 'PM')
+                        <i class="fas fa-moon text-primary"></i> Afternoon (PM) Session
+                    @else
+                        <i class="fas fa-clock text-danger"></i> Overtime (OT) Session
+                    @endif
+                    &nbsp;|&nbsp; {{ $qrCode->valid_date->format('F d, Y') }}
+                </small>
                 </div>
                 @php
                     $expiresAt = match($qrCode->session) {
