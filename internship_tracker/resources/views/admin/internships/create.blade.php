@@ -90,7 +90,7 @@
                                 <div class="invalid-feedback">{{ $message }}</div>
                             @enderror
                         </div>
-
+<!-- 
                         <div class="mb-3">
                             <label for="company_name" class="form-label">Company Name (Optional)</label>
                             <input type="text" class="form-control @error('company_name') is-invalid @enderror" 
@@ -109,7 +109,7 @@
                             @error('position')
                                 <div class="invalid-feedback">{{ $message }}</div>
                             @enderror
-                        </div>
+                        </div> -->
 
                         <div class="mb-3">
                             <label for="start_date" class="form-label">Start Date</label>
