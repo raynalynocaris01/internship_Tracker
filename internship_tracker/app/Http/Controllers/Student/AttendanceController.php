@@ -12,91 +12,119 @@ use Illuminate\Support\Facades\Log;
 use GuzzleHttp\Client;
 use App\Models\SubjectQRCode;
 use Zxing\QrReader;
-// QR Code package
-use SimpleSoftwareIO\QrCode\Facades\QrCode;
+
 
 class AttendanceController extends Controller
 {
     public function dashboard()
-    {
-        $student = auth()->user();
-        
-        // Get active internship (changed from enrollment)
-        $internship = Internship::where('student_id', $student->id)
-            ->where('status', 'active')  // Changed from 'enrolled'
-            ->with('subject', 'teacher')
-            ->first();
-        
-        if (!$internship) {
-            return view('student.dashboard', [
-                'noInternship' => true,  // Changed variable name
-                'message' => 'You have no active internship. Please contact your administrator.'
-            ]);
-        }
-        
-        // Get or create QR code
-        $qrCode = StudentQRCode::firstOrCreate(
-            ['student_id' => $student->id],
-            ['qr_code' => $this->generateUniqueQRCode(), 'status' => 'active']
-        );
-        
-        // Today's attendance (separate sessions)
-        $todayAM = Attendance::where('student_id', $student->id)
-            ->where('internship_id', $internship->id)
-            ->whereDate('date', Carbon::today())
-            ->where('session', 'AM')
-            ->first();
-
-        $todayPM = Attendance::where('student_id', $student->id)
-            ->where('internship_id', $internship->id)
-            ->whereDate('date', Carbon::today())
-            ->where('session', 'PM')
-            ->first();
-        
-        // Recent attendance (last 10 records)
-        $recentAttendance = Attendance::where('student_id', $student->id)
-            ->where('internship_id', $internship->id)  // Changed from enrollment_id
-            ->orderBy('date', 'desc')
-            ->limit(10)
-            ->get();
-        
-        // Statistics
-        $totalHours = Attendance::where('student_id', $student->id)
-            ->where('internship_id', $internship->id)  // Changed from enrollment_id
-            ->sum('hours_worked');
-            
-        $totalDays = Attendance::where('student_id', $student->id)
-            ->where('internship_id', $internship->id)  // Changed from enrollment_id
-            ->count();
-            
-        $progress = $internship->progress;  // Changed from $enrollment->progress
-        $requiredHours = $internship->subject->required_hours;
-        $remainingHours = max($requiredHours - $totalHours, 0);
-        
-        // Generate QR code image
-        $qrCodeImage = $this->generateQRCodeImage($qrCode->qr_code);
-        
-        return view('student.dashboard', compact(
-            'student', 'internship', 'qrCode', 'qrCodeImage',  
-            'todayAM', 'todayPM',  
-       'recentAttendance', 'totalHours', 
-            'totalDays', 'progress', 'requiredHours', 'remainingHours'
-        ));
+{
+    $student = auth()->user();
+    
+    // Get active internship
+    $internship = Internship::where('student_id', $student->id)
+        ->where('status', 'active')
+        ->with('subject', 'teacher')
+        ->first();
+    
+    if (!$internship) {
+        return view('student.dashboard', [
+            'noInternship' => true,
+            'message' => 'You have no active internship. Please contact your administrator.'
+        ]);
     }
+    
+    // Get or create QR code
+    $qrCode = StudentQRCode::firstOrCreate(
+        ['student_id' => $student->id],
+        ['qr_code' => $this->generateUniqueQRCode(), 'status' => 'active']
+    );
+    
+    // Today's attendance (separate sessions)
+    $todayAM = Attendance::where('student_id', $student->id)
+        ->where('internship_id', $internship->id)
+        ->whereDate('date', Carbon::today())
+        ->where('session', 'AM')
+        ->first();
+
+    $todayPM = Attendance::where('student_id', $student->id)
+        ->where('internship_id', $internship->id)
+        ->whereDate('date', Carbon::today())
+        ->where('session', 'PM')
+        ->first();
+
+    $todayOT = Attendance::where('student_id', $student->id)
+        ->where('internship_id', $internship->id)
+        ->whereDate('date', Carbon::today())
+        ->where('session', 'OT')
+        ->first();
+    
+    // ========== AUTO TIMEOUT (Option 3) ==========
+    $now = Carbon::now();
+    $amCutoff = Carbon::today()->setTime(12, 15);  // 12:15 PM
+    $pmCutoff = Carbon::today()->setTime(17, 15);  // 5:15 PM
+
+    // Auto-timeout AM session if after 12:15 and still open
+    if ($todayAM && !$todayAM->time_out && $now->gte($amCutoff)) {
+        $todayAM->time_out = $amCutoff;
+        $todayAM->save();
+        $this->calculateAttendanceHours($todayAM);
+        // Refresh the record
+        $todayAM = $todayAM->fresh();
+    }
+
+    // Auto-timeout PM session if after 17:15 and still open
+    if ($todayPM && !$todayPM->time_out && $now->gte($pmCutoff)) {
+        $todayPM->time_out = $pmCutoff;
+        $todayPM->save();
+        $this->calculateAttendanceHours($todayPM);
+        $todayPM = $todayPM->fresh();
+    }
+    // ============================================
+    
+    // Recent attendance (last 10 records)
+    $recentAttendance = Attendance::where('student_id', $student->id)
+        ->where('internship_id', $internship->id)
+        ->orderBy('date', 'desc')
+        ->limit(10)
+        ->get();
+    
+    // Statistics
+    $totalHours = Attendance::where('student_id', $student->id)
+        ->where('internship_id', $internship->id)
+        ->sum('hours_worked');
+        
+    $totalDays = Attendance::where('student_id', $student->id)
+        ->where('internship_id', $internship->id)
+        ->count();
+        
+    $progress = $internship->progress;
+    $requiredHours = $internship->subject->required_hours;
+    $remainingHours = max($requiredHours - $totalHours, 0);
+    
+    // Generate QR code image
+    $qrCodeImage = $this->generateQRCodeImage($qrCode->qr_code);
+    
+    return view('student.dashboard', compact(
+        'student', 'internship', 'qrCode', 'qrCodeImage',  
+        'todayAM', 'todayPM', 'todayOT',
+        'recentAttendance', 'totalHours', 
+        'totalDays', 'progress', 'requiredHours', 'remainingHours'
+    ));
+}
     
     /**
      * Generate QR code image - Works with or without GD extension
      */
     private function generateQRCodeImage($qrData)
     {
-        // Try to use SimpleSoftwareIO if GD is enabled
-        if (extension_loaded('gd')) {
-            try {
-                return QrCode::size(250)->generate($qrData);
-            } catch (\Exception $e) {
-                Log::warning('QR Code generation with GD failed: ' . $e->getMessage());
-            }
-        }
+        // // Try to use SimpleSoftwareIO if GD is enabled
+        // if (extension_loaded('gd')) {
+        //     try {
+        //         return QrCode::size(250)->generate($qrData);
+        //     } catch (\Exception $e) {
+        //         Log::warning('QR Code generation with GD failed: ' . $e->getMessage());
+        //     }
+        // }
         
         // Fallback: Use free QR API (no GD required)
         return $this->getQRCodeFromAPI($qrData);
@@ -197,48 +225,47 @@ class AttendanceController extends Controller
     }
     
     public function timeOut(Request $request)
-    {
-        try {
-            $student = auth()->user();
-            
-            $attendance = Attendance::where('student_id', $student->id)
-                ->whereDate('date', Carbon::today())
-                ->first();
-            
-            if (!$attendance) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'No time in record found for today.'
-                ], 400);
-            }
-            
-            if ($attendance->time_out !== null) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'You have already timed out for today.'
-                ], 400);
-            }
-            
-            $attendance->time_out = Carbon::now();
-            $attendance->save();
-            
-            // Calculate hours worked
-            $this->calculateAttendanceHours($attendance);
-            
-            return response()->json([
-                'success' => true,
-                'message' => 'Time out recorded successfully at ' . Carbon::now()->format('h:i A'),
-                'hours_worked' => $attendance->hours_worked
-            ]);
-            
-        } catch (\Exception $e) {
-            Log::error('Time Out Error: ' . $e->getMessage());
+{
+    try {
+        $student = auth()->user();
+        $session = $request->input('session'); // 'AM', 'PM', or 'OT'
+
+        $attendance = Attendance::where('student_id', $student->id)
+            ->whereDate('date', Carbon::today())
+            ->where('session', $session)
+            ->first();
+
+        if (!$attendance) {
             return response()->json([
                 'success' => false,
-                'message' => 'An error occurred. Please try again.'
-            ], 500);
+                'message' => "No time-in found for {$session} session today."
+            ], 400);
         }
+
+        if ($attendance->time_out !== null) {
+            return response()->json([
+                'success' => false,
+                'message' => "You have already timed out for {$session} session."
+            ], 400);
+        }
+
+        $attendance->time_out = Carbon::now();
+        $attendance->save();
+        $this->calculateAttendanceHours($attendance);
+
+        return response()->json([
+            'success' => true,
+            'message' => "{$session} Time out recorded at " . Carbon::now()->format('h:i A'),
+            'hours_worked' => $attendance->hours_worked
+        ]);
+    } catch (\Exception $e) {
+        Log::error('Time Out Error: ' . $e->getMessage());
+        return response()->json([
+            'success' => false,
+            'message' => 'An error occurred. Please try again.'
+        ], 500);
     }
+}
     
     /**
      * Calculate hours worked for an attendance record
@@ -376,6 +403,23 @@ class AttendanceController extends Controller
         $now     = \Carbon\Carbon::now();
         $today   = $now->toDateString();
         $session = $qrCode->session; // AM or PM
+
+        // Determine cut-off time for this session (based on QR's valid_date)
+        $cutoff = match($session) {
+            'AM' => \Carbon\Carbon::parse($qrCode->valid_date)->setTime(11, 50), // 11:50 AM
+            'PM' => \Carbon\Carbon::parse($qrCode->valid_date)->setTime(16, 50), // 4:50 PM
+            'OT' => null, // OT has no cut‑off (or set to 23:59)
+            default => null,
+        };
+
+        // Reject if past cut-off time
+        if ($cutoff && $now->gt($cutoff)) {
+            return view('student.scan', [
+                'success' => false,
+                'error'   => "This QR code is no longer valid for {$session} session (cut‑off at " . $cutoff->format('h:i A') . ").",
+                'qrCode'  => $qrCode,
+            ]);
+        }
  
         // Check for existing record
         $existing = \App\Models\Attendance::where('student_id', $student->id)

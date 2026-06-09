@@ -5,7 +5,7 @@
 @section('content')
 <div class="container">
 
-    {{-- ── Stats Cards ──────────────────────────────────────────────── --}}
+    {{-- Stats Cards --}}
     <div class="row mb-4">
         <div class="col-md-4">
             <div class="card text-white bg-primary">
@@ -33,7 +33,7 @@
         </div>
     </div>
 
-    {{-- ── Flash Messages ───────────────────────────────────────────── --}}
+    {{-- Flash Messages --}}
     @if(session('success'))
         <div class="alert alert-success alert-dismissible fade show" role="alert">
             <i class="fas fa-check-circle"></i> {{ session('success') }}
@@ -47,7 +47,7 @@
         </div>
     @endif
 
-    {{-- ── Today's Attendance by Section ───────────────────────────── --}}
+    {{-- Today's Attendance by Section --}}
     <div class="card mb-4">
         <div class="card-header d-flex justify-content-between align-items-center"
              style="background-color: #216699; color: white;">
@@ -56,15 +56,15 @@
                 Today's Attendance &mdash; {{ \Carbon\Carbon::today()->format('F d, Y') }}
             </h4>
             <span class="badge bg-light text-dark fs-6">
-                <i class="fas fa-sun text-warning"></i> AM: before 12:00 &nbsp;|&nbsp;
-                <i class="fas fa-moon text-primary"></i> PM: 12:00 onwards
+                <i class="fas fa-sun text-warning"></i> AM &nbsp;|&nbsp;
+                <i class="fas fa-moon text-primary"></i> PM &nbsp;|&nbsp;
+                <i class="fas fa-clock text-danger"></i> OT
             </span>
         </div>
 
         <div class="card-body">
             @if(isset($sections) && $sections->count() > 0)
 
-                {{-- Section Tabs --}}
                 <ul class="nav nav-tabs mb-3" id="sectionTabs" role="tablist">
                     @foreach($sections as $index => $section)
                         <li class="nav-item" role="presentation">
@@ -87,7 +87,7 @@
 
                             @if($section->students->count() > 0)
 
-                                {{-- ── QR Code Generator for this section ── --}}
+                                {{-- QR Code Generator for this section --}}
                                 @php
                                     $firstEntry     = $section->students->first();
                                     $sectionSubject = $firstEntry?->internship?->subject;
@@ -97,7 +97,7 @@
                                 @if($sectionSubject && $sectionId)
                                 <div class="d-flex align-items-center gap-2 mb-3 p-2 bg-light rounded">
                                     <span class="fw-bold text-muted small">
-                                        <i class="fas fa-qrcode"></i> Generate QR for this section:
+                                        <i class="fas fa-qrcode"></i> Generate QR:
                                     </span>
                                     <form method="POST" action="{{ route('teacher.qrcode.generate') }}" class="d-inline">
                                         @csrf
@@ -117,6 +117,15 @@
                                             <i class="fas fa-moon"></i> PM QR
                                         </button>
                                     </form>
+                                    <form method="POST" action="{{ route('teacher.qrcode.generate') }}" class="d-inline">
+                                        @csrf
+                                        <input type="hidden" name="subject_id" value="{{ $subjectId }}">
+                                        <input type="hidden" name="section_id" value="{{ $sectionId }}">
+                                        <input type="hidden" name="session" value="OT">
+                                        <button type="submit" class="btn btn-sm btn-outline-danger fw-bold">
+                                            <i class="fas fa-clock"></i> OT QR
+                                        </button>
+                                    </form>
                                 </div>
                                 @endif
 
@@ -128,20 +137,28 @@
                                                 <th>Subject</th>
                                                 {{-- AM columns --}}
                                                 <th class="text-center" style="background:#fff8e1;">
-                                                    <i class="fas fa-sun text-warning"></i> AM Time In
+                                                    <i class="fas fa-sun text-warning"></i> AM In
                                                 </th>
                                                 <th class="text-center" style="background:#fff8e1;">
-                                                    <i class="fas fa-sun text-warning"></i> AM Time Out
+                                                    <i class="fas fa-sun text-warning"></i> AM Out
                                                 </th>
                                                 <th class="text-center" style="background:#fff8e1;">AM Hrs</th>
                                                 {{-- PM columns --}}
                                                 <th class="text-center" style="background:#e8f4fd;">
-                                                    <i class="fas fa-moon text-primary"></i> PM Time In
+                                                    <i class="fas fa-moon text-primary"></i> PM In
                                                 </th>
                                                 <th class="text-center" style="background:#e8f4fd;">
-                                                    <i class="fas fa-moon text-primary"></i> PM Time Out
+                                                    <i class="fas fa-moon text-primary"></i> PM Out
                                                 </th>
                                                 <th class="text-center" style="background:#e8f4fd;">PM Hrs</th>
+                                                {{-- OT columns --}}
+                                                <th class="text-center" style="background:#fce4ec;">
+                                                    <i class="fas fa-clock text-danger"></i> OT In
+                                                </th>
+                                                <th class="text-center" style="background:#fce4ec;">
+                                                    <i class="fas fa-clock text-danger"></i> OT Out
+                                                </th>
+                                                <th class="text-center" style="background:#fce4ec;">OT Hrs</th>
                                                 <th class="text-center">Total Hrs</th>
                                                 <th class="text-center">Actions</th>
                                             </tr>
@@ -151,41 +168,45 @@
                                             @php
                                                 $student    = $entry->student;
                                                 $internship = $entry->internship;
-                                                $am         = $entry->amRecord;  // today's AM Attendance|null
-                                                $pm         = $entry->pmRecord;  // today's PM Attendance|null
+                                                $am         = $entry->amRecord;
+                                                $pm         = $entry->pmRecord;
+                                                $ot         = $entry->otRecord ?? null;
 
-                                                $amHrs    = $am?->hours_worked ?? 0;
-                                                $pmHrs    = $pm?->hours_worked ?? 0;
-                                                $totalHrs = $amHrs + $pmHrs;
+                                                $amHrs = $am?->hours_worked ?? 0;
+                                                $pmHrs = $pm?->hours_worked ?? 0;
+                                                $otHrs = $ot?->hours_worked ?? 0;
+                                                $totalHrs = $amHrs + $pmHrs + $otHrs;
 
-                                                // Button visibility logic
-                                                $canAmIn   = !$am || !$am->time_in;
                                                 $canAmOut  = $am && $am->time_in && !$am->time_out;
-                                                $canPmIn   = !$pm || !$pm->time_in;
                                                 $canPmOut  = $pm && $pm->time_in && !$pm->time_out;
+                                                $canOtIn   = !$ot || !$ot->time_in;
+                                                $canOtOut  = $ot && $ot->time_in && !$ot->time_out;
+
+                                                // Time‑in buttons respect cut‑off times (11:50 AM for AM, 4:50 PM for PM)
+                                                $now = \Carbon\Carbon::now();
+                                                $amCutoff = \Carbon\Carbon::today()->setTime(11, 50);
+                                                $pmCutoff = \Carbon\Carbon::today()->setTime(16, 50);
+                                                $canAmIn = (!$am || !$am->time_in) && $now->lt($amCutoff);
+                                                $canPmIn = (!$pm || !$pm->time_in) && $now->lt($pmCutoff);
                                             @endphp
                                             <tr>
-                                                {{-- Student --}}
                                                 <td>
                                                     <strong>{{ $student->name }}</strong><br>
                                                     <small class="text-muted">{{ $student->student_id }}</small>
                                                 </td>
-
-                                                {{-- Subject --}}
                                                 <td>
                                                     <strong>{{ $internship->subject->code ?? 'N/A' }}</strong><br>
                                                     <small class="text-muted">{{ $internship->subject->name ?? '' }}</small>
                                                 </td>
 
-                                                {{-- AM Time In --}}
+                                                {{-- AM In --}}
                                                 <td class="text-center" style="background:#fffde7;">
                                                     @if($am?->time_in)
                                                         <span class="badge bg-success">
                                                             {{ \Carbon\Carbon::parse($am->time_in)->format('h:i A') }}
                                                         </span>
                                                     @elseif($canAmIn)
-                                                        <form method="POST"
-                                                              action="{{ route('teacher.students.attendance.timein', $student) }}">
+                                                        <form method="POST" action="{{ route('teacher.students.attendance.timein', $student) }}">
                                                             @csrf
                                                             <input type="hidden" name="session" value="AM">
                                                             <button type="submit" class="btn btn-sm btn-outline-warning fw-bold">
@@ -197,15 +218,14 @@
                                                     @endif
                                                 </td>
 
-                                                {{-- AM Time Out --}}
+                                                {{-- AM Out --}}
                                                 <td class="text-center" style="background:#fffde7;">
                                                     @if($am?->time_out)
                                                         <span class="badge bg-warning text-dark">
                                                             {{ \Carbon\Carbon::parse($am->time_out)->format('h:i A') }}
                                                         </span>
                                                     @elseif($canAmOut)
-                                                        <form method="POST"
-                                                              action="{{ route('teacher.students.attendance.timeout', $student) }}">
+                                                        <form method="POST" action="{{ route('teacher.students.attendance.timeout', $student) }}">
                                                             @csrf
                                                             <input type="hidden" name="session" value="AM">
                                                             <button type="submit" class="btn btn-sm btn-warning fw-bold">
@@ -226,15 +246,14 @@
                                                     @endif
                                                 </td>
 
-                                                {{-- PM Time In --}}
+                                                {{-- PM In --}}
                                                 <td class="text-center" style="background:#e3f2fd;">
                                                     @if($pm?->time_in)
                                                         <span class="badge bg-primary">
                                                             {{ \Carbon\Carbon::parse($pm->time_in)->format('h:i A') }}
                                                         </span>
                                                     @elseif($canPmIn)
-                                                        <form method="POST"
-                                                              action="{{ route('teacher.students.attendance.timein', $student) }}">
+                                                        <form method="POST" action="{{ route('teacher.students.attendance.timein', $student) }}">
                                                             @csrf
                                                             <input type="hidden" name="session" value="PM">
                                                             <button type="submit" class="btn btn-sm btn-outline-primary fw-bold">
@@ -246,15 +265,14 @@
                                                     @endif
                                                 </td>
 
-                                                {{-- PM Time Out --}}
+                                                {{-- PM Out --}}
                                                 <td class="text-center" style="background:#e3f2fd;">
                                                     @if($pm?->time_out)
                                                         <span class="badge bg-info text-dark">
                                                             {{ \Carbon\Carbon::parse($pm->time_out)->format('h:i A') }}
                                                         </span>
                                                     @elseif($canPmOut)
-                                                        <form method="POST"
-                                                              action="{{ route('teacher.students.attendance.timeout', $student) }}">
+                                                        <form method="POST" action="{{ route('teacher.students.attendance.timeout', $student) }}">
                                                             @csrf
                                                             <input type="hidden" name="session" value="PM">
                                                             <button type="submit" class="btn btn-sm btn-info fw-bold">
@@ -275,14 +293,61 @@
                                                     @endif
                                                 </td>
 
-                                                {{-- Total Hours today --}}
+                                                {{-- OT In --}}
+                                                <td class="text-center" style="background:#fce4ec;">
+                                                    @if($ot?->time_in)
+                                                        <span class="badge bg-danger">
+                                                            {{ \Carbon\Carbon::parse($ot->time_in)->format('h:i A') }}
+                                                        </span>
+                                                    @elseif($canOtIn)
+                                                        <form method="POST" action="{{ route('teacher.students.attendance.timein', $student) }}">
+                                                            @csrf
+                                                            <input type="hidden" name="session" value="OT">
+                                                            <button type="submit" class="btn btn-sm btn-outline-danger fw-bold">
+                                                                <i class="fas fa-sign-in-alt"></i> OT In
+                                                            </button>
+                                                        </form>
+                                                    @else
+                                                        <span class="text-muted">—</span>
+                                                    @endif
+                                                </td>
+
+                                                {{-- OT Out --}}
+                                                <td class="text-center" style="background:#fce4ec;">
+                                                    @if($ot?->time_out)
+                                                        <span class="badge bg-dark text-white">
+                                                            {{ \Carbon\Carbon::parse($ot->time_out)->format('h:i A') }}
+                                                        </span>
+                                                    @elseif($canOtOut)
+                                                        <form method="POST" action="{{ route('teacher.students.attendance.timeout', $student) }}">
+                                                            @csrf
+                                                            <input type="hidden" name="session" value="OT">
+                                                            <button type="submit" class="btn btn-sm btn-dark fw-bold">
+                                                                <i class="fas fa-sign-out-alt"></i> OT Out
+                                                            </button>
+                                                        </form>
+                                                    @else
+                                                        <span class="text-muted">—</span>
+                                                    @endif
+                                                </td>
+
+                                                {{-- OT Hours --}}
+                                                <td class="text-center" style="background:#fce4ec;">
+                                                    @if($otHrs > 0)
+                                                        <strong>{{ number_format($otHrs, 1) }}</strong>
+                                                    @else
+                                                        <span class="text-muted">0.0</span>
+                                                    @endif
+                                                </td>
+
+                                                {{-- Total Hours --}}
                                                 <td class="text-center">
                                                     <strong class="{{ $totalHrs > 0 ? 'text-success' : 'text-muted' }}">
                                                         {{ number_format($totalHrs, 1) }}
                                                     </strong>
                                                 </td>
 
-                                                {{-- Actions: Manual Entry + View History --}}
+                                                {{-- Actions --}}
                                                 <td class="text-center">
                                                     <div class="btn-group btn-group-sm">
                                                         <a href="{{ route('teacher.students.attendance.create', $student) }}"
@@ -319,12 +384,10 @@
         </div>
     </div>
 
-    {{-- ── Full Attendance Log (paginated) ─────────────────────────── --}}
+    {{-- Full Attendance Log --}}
     <div class="card">
         <div class="card-header" style="background-color: #6c757d; color: white;">
-            <h5 class="mb-0">
-                <i class="fas fa-list"></i> Full Attendance Log
-            </h5>
+            <h5 class="mb-0"><i class="fas fa-list"></i> Full Attendance Log</h5>
         </div>
         <div class="card-body">
             <div class="table-responsive">
@@ -347,21 +410,16 @@
                         @forelse($attendances as $attendance)
                         <tr>
                             <td>{{ \Carbon\Carbon::parse($attendance->date)->format('M d, Y') }}</td>
-                            <td>
-                                {{ $attendance->student->name }}<br>
-                                <small class="text-muted">{{ $attendance->student->student_id }}</small>
-                            </td>
+                            <td>{{ $attendance->student->name }}<br><small class="text-muted">{{ $attendance->student->student_id }}</small></td>
                             <td>{{ $attendance->internship->section->name ?? '—' }}</td>
                             <td>{{ $attendance->internship->subject->code ?? 'N/A' }}</td>
                             <td class="text-center">
-                                @if(($attendance->session ?? 'AM') === 'AM')
-                                    <span class="badge bg-warning text-dark">
-                                        <i class="fas fa-sun"></i> AM
-                                    </span>
+                                @if($attendance->session == 'AM')
+                                    <span class="badge bg-warning text-dark"><i class="fas fa-sun"></i> AM</span>
+                                @elseif($attendance->session == 'PM')
+                                    <span class="badge bg-primary"><i class="fas fa-moon"></i> PM</span>
                                 @else
-                                    <span class="badge bg-primary">
-                                        <i class="fas fa-moon"></i> PM
-                                    </span>
+                                    <span class="badge bg-danger"><i class="fas fa-clock"></i> OT</span>
                                 @endif
                             </td>
                             <td>{{ \Carbon\Carbon::parse($attendance->time_in)->format('h:i A') }}</td>
@@ -372,15 +430,14 @@
                                     <span class="badge bg-warning text-dark">Working</span>
                                 @endif
                             </td>
-                            <td>{{ number_format($attendance->hours_worked, 2) }} hrs</td>
+                            <td>{{ number_format($attendance->hours_worked, 2) }} hrs</p>
                             <td>
                                 <span class="badge bg-{{ $attendance->status == 'present' ? 'success' : ($attendance->status == 'late' ? 'warning' : 'secondary') }}">
                                     {{ ucfirst($attendance->status) }}
                                 </span>
                             </td>
                             <td>
-                                <a href="{{ route('teacher.attendance.show', $attendance) }}"
-                                   class="btn btn-sm btn-info" title="View">
+                                <a href="{{ route('teacher.attendance.show', $attendance) }}" class="btn btn-sm btn-info" title="View">
                                     <i class="fas fa-eye"></i>
                                 </a>
                             </td>
@@ -396,9 +453,7 @@
                     </tbody>
                 </table>
             </div>
-            <div class="mt-3">
-                {{ $attendances->links() }}
-            </div>
+            <div class="mt-3">{{ $attendances->links() }}</div>
         </div>
     </div>
 

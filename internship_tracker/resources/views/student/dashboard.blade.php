@@ -68,64 +68,111 @@
                     </a>
                 </div>
 
-                <!-- Today's Attendance (AM + PM) -->
-                <div class="card mb-4">
-                    <div class="card-header">
-                        <h5><i class="fas fa-clock"></i> Today's Attendance</h5>
-                    </div>
-                    <div class="card-body">
-                        <div class="table-responsive">
-                            <table class="table table-bordered text-center">
-                                <thead class="table-light">
-                                    <tr>
-                                        <th>Session</th>
-                                        <th>Time In</th>
-                                        <th>Time Out</th>
-                                        <th>Hours Worked</th>
-                                        <th>Status</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {{-- AM Row --}}
-                                    <tr>
-                                        <td><span class="badge bg-warning text-dark">AM</span></td>
-                                        @if($todayAM)
-                                            <td>{{ \Carbon\Carbon::parse($todayAM->time_in)->format('h:i A') }}</td>
-                                            <td>{{ $todayAM->time_out ? \Carbon\Carbon::parse($todayAM->time_out)->format('h:i A') : '—' }}</td>
-                                            <td><strong>{{ number_format($todayAM->hours_worked, 2) }}</strong> hrs</td>
-                                            <td>
-                                                <span class="badge bg-{{ $todayAM->status == 'present' ? 'success' : ($todayAM->status == 'late' ? 'warning' : 'secondary') }}">
-                                                    {{ ucfirst($todayAM->status) }}
-                                                </span>
-                                            </td>
-                                        @else
-                                            <td colspan="4" class="text-muted">Not yet recorded</td>
-                                        @endif
-                                    </tr>
-                                    {{-- PM Row --}}
-                                    <tr>
-                                        <td><span class="badge bg-primary">PM</span></td>
-                                        @if($todayPM)
-                                            <td>{{ \Carbon\Carbon::parse($todayPM->time_in)->format('h:i A') }}</td>
-                                            <td>{{ $todayPM->time_out ? \Carbon\Carbon::parse($todayPM->time_out)->format('h:i A') : '—' }}</td>
-                                            <td><strong>{{ number_format($todayPM->hours_worked, 2) }}</strong> hrs</td>
-                                            <td>
-                                                <span class="badge bg-{{ $todayPM->status == 'present' ? 'success' : ($todayPM->status == 'late' ? 'warning' : 'secondary') }}">
-                                                    {{ ucfirst($todayPM->status) }}
-                                                </span>
-                                            </td>
-                                        @else
-                                            <td colspan="4" class="text-muted">Not yet recorded</td>
-                                        @endif
-                                    </tr>
-                                </tbody>
-                            </table>
+                <!-- Today's Attendance (AM + PM + OT) -->
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h5><i class="fas fa-clock"></i> Today's Attendance</h5>
                         </div>
-                        <div class="alert alert-info mt-3 mb-0 small">
-                            <i class="fas fa-info-circle"></i> Use the <strong>Scan QR Code</strong> button above to record your attendance (AM/PM).
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-bordered text-center">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>Session</th>
+                                            <th>Time In</th>
+                                            <th>Time Out</th>
+                                            <th>Hours Worked</th>
+                                            <th>Status</th>
+                                            <th>Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {{-- AM Row --}}
+                                        <tr>
+                                            <td><span class="badge bg-warning text-dark">AM</span></td>
+                                            @if($todayAM)
+                                                <td>{{ \Carbon\Carbon::parse($todayAM->time_in)->format('h:i A') }}</td>
+                                                <td>{{ $todayAM->time_out ? \Carbon\Carbon::parse($todayAM->time_out)->format('h:i A') : '—' }}</td>
+                                                <td><strong>{{ number_format($todayAM->hours_worked, 2) }}</strong> hrs</p>
+                                                <td>
+                                                    <span class="badge bg-{{ $todayAM->status == 'present' ? 'success' : ($todayAM->status == 'late' ? 'warning' : 'secondary') }}">
+                                                        {{ ucfirst($todayAM->status) }}
+                                                    </span>
+                                                </td>
+                                                <td>
+                                                    @if($todayAM->time_in && !$todayAM->time_out)
+                                                        <button class="btn btn-sm btn-danger time-out-btn" data-session="AM">
+                                                            <i class="fas fa-sign-out-alt"></i> Time Out
+                                                        </button>
+                                                    @else
+                                                        —
+                                                    @endif
+                                                </td>
+                                            @else
+                                                <td colspan="5" class="text-muted">Not yet recorded</td>
+                                                <td>—</td>
+                                            @endif
+                                        </tr>
+                                        {{-- PM Row --}}
+                                        <tr>
+                                            <td><span class="badge bg-primary">PM</span></td>
+                                            @if($todayPM)
+                                                <td>{{ \Carbon\Carbon::parse($todayPM->time_in)->format('h:i A') }}</td>
+                                                <td>{{ $todayPM->time_out ? \Carbon\Carbon::parse($todayPM->time_out)->format('h:i A') : '—' }}</td>
+                                                <td><strong>{{ number_format($todayPM->hours_worked, 2) }}</strong> hrs</p>
+                                                <td>
+                                                    <span class="badge bg-{{ $todayPM->status == 'present' ? 'success' : ($todayPM->status == 'late' ? 'warning' : 'secondary') }}">
+                                                        {{ ucfirst($todayPM->status) }}
+                                                    </span>
+                                                </td>
+                                                <td>
+                                                    @if($todayPM->time_in && !$todayPM->time_out)
+                                                        <button class="btn btn-sm btn-danger time-out-btn" data-session="PM">
+                                                            <i class="fas fa-sign-out-alt"></i> Time Out
+                                                        </button>
+                                                    @else
+                                                        —
+                                                    @endif
+                                                </td>
+                                            @else
+                                                <td colspan="5" class="text-muted">Not yet recorded</td>
+                                                <td>—</td>
+                                            @endif
+                                        </tr>
+                                        {{-- OT Row --}}
+                                        <tr>
+                                            <td><span class="badge bg-danger">OT</span></p>
+                                            @if($todayOT ?? false)
+                                                <td>{{ \Carbon\Carbon::parse($todayOT->time_in)->format('h:i A') }}</p>
+                                                <td>{{ $todayOT->time_out ? \Carbon\Carbon::parse($todayOT->time_out)->format('h:i A') : '—' }}</p>
+                                                <td><strong>{{ number_format($todayOT->hours_worked, 2) }}</strong> hrs</p>
+                                                <td>
+                                                    <span class="badge bg-{{ $todayOT->status == 'present' ? 'success' : ($todayOT->status == 'late' ? 'warning' : 'secondary') }}">
+                                                        {{ ucfirst($todayOT->status) }}
+                                                    </span>
+                                                </p>
+                                                <td>
+                                                    @if($todayOT->time_in && !$todayOT->time_out)
+                                                        <button class="btn btn-sm btn-danger time-out-btn" data-session="OT">
+                                                            <i class="fas fa-sign-out-alt"></i> Time Out
+                                                        </button>
+                                                    @else
+                                                        —
+                                                    @endif
+                                                </p>
+                                            @else
+                                                <td colspan="5" class="text-muted">Not yet recorded</td>
+                                                <td>—</td>
+                                            @endif
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                            <div class="alert alert-info mt-3 mb-0 small">
+                                <i class="fas fa-info-circle"></i> Use the <strong>Scan QR Code</strong> button to time in. Click <strong>Time Out</strong> when you finish a session.
+                            </div>
                         </div>
                     </div>
-                </div>
 
                 <!-- Recent Attendance Records (with Session column) -->
                 <div class="card">
@@ -185,8 +232,26 @@
 
 @push('scripts')
 <script>
-// No inline timeIn/timeOut functions needed – students must use the scanner.
-// If you still want the old buttons, remove the alert and keep the previous logic.
-// However, the scanner is the intended flow.
+document.querySelectorAll('.time-out-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+        const session = this.dataset.session;
+        if (confirm(`Time out for ${session} session?`)) {
+            fetch('{{ route("student.attendance.timeout") }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                },
+                body: JSON.stringify({ session: session })
+            })
+            .then(response => response.json())
+            .then(data => {
+                alert(data.message);
+                if (data.success) location.reload();
+            })
+            .catch(err => alert('Error: ' + err.message));
+        }
+    });
+});
 </script>
 @endpush

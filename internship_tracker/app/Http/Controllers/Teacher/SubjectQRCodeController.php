@@ -25,7 +25,7 @@ class SubjectQRCodeController extends Controller
         $request->validate([
             'subject_id' => 'required|exists:subjects,id',
             'section_id' => 'required|exists:sections,id',
-            'session'    => 'required|in:AM,PM',
+            'session'    => 'required|in:AM,PM,OT',
         ]);
 
         $teacherId = auth()->id();

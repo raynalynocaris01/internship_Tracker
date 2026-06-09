@@ -7,7 +7,8 @@
 <div class="container">
     <div class="row justify-content-center">
         <div class="col-md-12">
-            <!-- Welcome Card -->
+
+            {{-- Welcome Card --}}
             <div class="card mb-4">
                 <div class="card-header" style="background-color: #216699; color: white;">
                     <h3 class="mb-0">Teacher Dashboard</h3>
@@ -19,7 +20,7 @@
                 </div>
             </div>
 
-            <!-- Stats Cards -->
+            {{-- Stats Cards --}}
             <div class="row mb-4">
                 <div class="col-md-3">
                     <div class="card text-white bg-primary mb-3">
@@ -59,22 +60,23 @@
                 </div>
             </div>
 
-            <!-- Section Tabs -->
+            {{-- Students by Section --}}
             <div class="card">
-                <div class="card-header d-flex justify-content-between align-items-center" style="background-color: #216699; color: white;">
+                <div class="card-header d-flex justify-content-between align-items-center"
+                     style="background-color: #216699; color: white;">
                     <h4 class="mb-0"><i class="fas fa-users"></i> Students by Section</h4>
                     <a href="{{ route('teacher.students.create') }}" class="btn btn-light btn-sm">
                         <i class="fas fa-user-plus"></i> Add New Student
                     </a>
                 </div>
                 <div class="card-body">
+
                     @if(session('success'))
                         <div class="alert alert-success alert-dismissible fade show" role="alert">
                             <i class="fas fa-check-circle"></i> {{ session('success') }}
                             <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                         </div>
                     @endif
-
                     @if(session('error'))
                         <div class="alert alert-danger alert-dismissible fade show" role="alert">
                             <i class="fas fa-exclamation-circle"></i> {{ session('error') }}
@@ -82,16 +84,15 @@
                         </div>
                     @endif
 
-                    @if(isset($sections) && count($sections) > 0)
-                        <!-- Section Tabs -->
+                    @if(isset($sections) && $sections->count() > 0)
+
                         <ul class="nav nav-tabs mb-3" id="sectionTabs" role="tablist">
                             @foreach($sections as $index => $section)
                                 <li class="nav-item" role="presentation">
-                                    <button class="nav-link {{ $index == 0 ? 'active' : '' }}" 
-                                            data-bs-toggle="tab" 
-                                            data-bs-target="#section-{{ $section->id }}" 
-                                            type="button" 
-                                            role="tab">
+                                    <button class="nav-link {{ $index == 0 ? 'active' : '' }}"
+                                            data-bs-toggle="tab"
+                                            data-bs-target="#section-{{ $section->id }}"
+                                            type="button" role="tab">
                                         <i class="fas fa-users"></i> {{ $section->name }}
                                         <span class="badge bg-secondary ms-1">{{ $section->students_count ?? 0 }}</span>
                                     </button>
@@ -99,14 +100,13 @@
                             @endforeach
                         </ul>
 
-                        <!-- Tab Content -->
                         <div class="tab-content">
                             @foreach($sections as $index => $section)
-                                <div class="tab-pane fade {{ $index == 0 ? 'show active' : '' }}" 
-                                     id="section-{{ $section->id }}" 
+                                <div class="tab-pane fade {{ $index == 0 ? 'show active' : '' }}"
+                                     id="section-{{ $section->id }}"
                                      role="tabpanel">
-                                    
-                                    @if(isset($section->students) && $section->students->count() > 0)
+
+                                    @if($section->students->count() > 0)
                                         <div class="table-responsive">
                                             <table class="table table-hover">
                                                 <thead>
@@ -114,7 +114,6 @@
                                                         <th>Student ID</th>
                                                         <th>Name</th>
                                                         <th>Course</th>
-                                                        <th>Year Level</th>
                                                         <th>Subject</th>
                                                         <th>Company</th>
                                                         <th>Progress</th>
@@ -126,20 +125,22 @@
                                                 <tbody>
                                                     @foreach($section->students as $student)
                                                     @php
-                                                        $internship = $student->internships->first();
-                                                        $hasInternship = $internship ? true : false;
-                                                        $progress = $internship ? $internship->progress : 0;
-                                                        $totalHoursStudent = $student->attendances->sum('hours_worked') ?? 0;
+                                                        // Use currentInternship set by controller, NOT $student->internships->first()
+                                                        $internship        = $student->currentInternship ?? null;
+                                                        $hasInternship     = $internship !== null;
+                                                        $progress          = $hasInternship ? $internship->progress : 0;
+                                                        $totalHoursStudent = $student->attendances?->sum('hours_worked') ?? 0;
                                                     @endphp
                                                     <tr>
-                                                        <td>{{ $student->student_id ?? 'N/A' }}</p>
+                                                        <td>{{ $student->student_id ?? 'N/A' }}</td>
                                                         <td>
                                                             {{ $student->name }}<br>
                                                             <small class="text-muted">{{ $student->email }}</small>
-                                                        </p>
-                                                        <td>{{ $student->course ?? 'N/A' }}<br>
+                                                        </td>
+                                                        <td>
+                                                            {{ $student->course ?? 'N/A' }}<br>
                                                             <small>Year {{ $student->year_level ?? 'N/A' }}</small>
-                                                        </p>
+                                                        </td>
                                                         <td>
                                                             @if($hasInternship)
                                                                 <strong>{{ $internship->subject->code ?? 'N/A' }}</strong><br>
@@ -147,7 +148,7 @@
                                                             @else
                                                                 <span class="badge bg-secondary">Not Assigned</span>
                                                             @endif
-                                                        </p>
+                                                        </td>
                                                         <td>
                                                             @if($hasInternship)
                                                                 {{ $internship->company_name ?? 'School-based' }}
@@ -157,7 +158,7 @@
                                                             @else
                                                                 —
                                                             @endif
-                                                        </p>
+                                                        </td>
                                                         <td>
                                                             @if($hasInternship)
                                                                 <div class="progress" style="height: 6px; width: 100px; display: inline-block;">
@@ -167,11 +168,11 @@
                                                             @else
                                                                 <span class="text-muted">—</span>
                                                             @endif
-                                                        </p>
+                                                        </td>
                                                         <td>
-                                                            <strong>{{ number_format($totalHoursStudent, 1) }}</strong> / 
-                                                            {{ $internship ? $internship->subject->required_hours : 0 }} hrs
-                                                        </p>
+                                                            <strong>{{ number_format($totalHoursStudent, 1) }}</strong> /
+                                                            {{ $hasInternship ? $internship->subject->required_hours : 0 }} hrs
+                                                        </td>
                                                         <td>
                                                             @if($hasInternship)
                                                                 @if($internship->status == 'active')
@@ -186,25 +187,28 @@
                                                             @else
                                                                 <span class="badge bg-secondary">No Internship</span>
                                                             @endif
-                                                        </p>
+                                                        </td>
                                                         <td>
-                                                            <a href="{{ route('teacher.students.show', $student) }}" class="btn btn-sm btn-info" title="View Details">
+                                                            <a href="{{ route('teacher.students.show', $student) }}"
+                                                               class="btn btn-sm btn-info" title="View Details">
                                                                 <i class="fas fa-eye"></i>
                                                             </a>
                                                             @if(!$hasInternship)
-                                                                <button type="button" class="btn btn-sm btn-primary assign-single" 
-                                                                        data-bs-toggle="modal" data-bs-target="#singleAssignModal"
+                                                                <button type="button"
+                                                                        class="btn btn-sm btn-primary assign-single"
+                                                                        data-bs-toggle="modal"
+                                                                        data-bs-target="#singleAssignModal"
                                                                         data-student-id="{{ $student->id }}"
                                                                         data-student-name="{{ $student->name }}"
                                                                         title="Assign Internship">
                                                                     <i class="fas fa-briefcase"></i>
                                                                 </button>
                                                             @endif
-                                                        </p>
+                                                        </td>
                                                     </tr>
                                                     @endforeach
                                                 </tbody>
-                                            </div>
+                                            </table>
                                         </div>
                                     @else
                                         <div class="text-center py-4">
@@ -218,6 +222,7 @@
                                 </div>
                             @endforeach
                         </div>
+
                     @else
                         <div class="text-center py-4">
                             <i class="fas fa-users fa-3x text-muted mb-3"></i>
@@ -227,11 +232,12 @@
                     @endif
                 </div>
             </div>
+
         </div>
     </div>
 </div>
 
-<!-- Single Assign Modal -->
+{{-- Single Assign Modal --}}
 <div class="modal fade" id="singleAssignModal" tabindex="-1">
     <div class="modal-dialog">
         <div class="modal-content">
@@ -244,7 +250,6 @@
                 </div>
                 <div class="modal-body">
                     <p>Assigning internship to: <strong id="single_student_name"></strong></p>
-                    
                     <div class="mb-3">
                         <label class="form-label">Subject <span class="text-danger">*</span></label>
                         <select name="subject_id" class="form-control" required>
@@ -256,17 +261,15 @@
                             @endforeach
                         </select>
                     </div>
-                    
                     <div class="mb-3">
                         <label class="form-label">Company Name</label>
-                        <input type="text" name="company_name" class="form-control" placeholder="Leave blank for school-based">
+                        <input type="text" name="company_name" class="form-control"
+                               placeholder="Leave blank for school-based">
                     </div>
-                    
                     <div class="mb-3">
                         <label class="form-label">Position</label>
                         <input type="text" name="position" class="form-control" placeholder="e.g., Intern">
                     </div>
-                    
                     <div class="mb-3">
                         <label class="form-label">Start Date</label>
                         <input type="date" name="start_date" class="form-control" value="{{ date('Y-m-d') }}">
@@ -283,13 +286,10 @@
 
 @push('scripts')
 <script>
-    // Single assign modal
     document.querySelectorAll('.assign-single').forEach(btn => {
-        btn.addEventListener('click', function() {
-            const studentId = this.dataset.studentId;
-            const studentName = this.dataset.studentName;
-            document.getElementById('single_student_id').value = studentId;
-            document.getElementById('single_student_name').textContent = studentName;
+        btn.addEventListener('click', function () {
+            document.getElementById('single_student_id').value = this.dataset.studentId;
+            document.getElementById('single_student_name').textContent = this.dataset.studentName;
         });
     });
 </script>

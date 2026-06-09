@@ -51,14 +51,6 @@
                     <button type="submit" class="btn-login">Login</button>
                 </form>
                 
-                <!-- REMOVED REGISTER LINK -->
-                <!-- Only show for admins or remove completely -->
-                
-                <div class="footer-note">
-                    <small>Accounts are managed by your administrator</small>
-                    <br>
-                    <small class="text-muted">© {{ date('Y') }} Internship Tracker System</small>
-                </div>
             </div>
         </div>
     </div>

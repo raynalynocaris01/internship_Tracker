@@ -1,5 +1,4 @@
 <?php
-// app/Http/Controllers/Teacher/AttendanceController.php
 
 namespace App\Http\Controllers\Teacher;
 
@@ -33,6 +32,7 @@ class AttendanceController extends Controller
 
         $today = Carbon::today();
 
+        // Fetch all today's attendance records (AM, PM, OT)
         $todayRecords = Attendance::whereIn('internship_id', $internshipIds)
             ->whereDate('date', $today)
             ->get()
@@ -58,6 +58,7 @@ class AttendanceController extends Controller
                 $entry->internship = $internship;
                 $entry->amRecord   = $todayRecords->get($studentId . '_AM')?->first();
                 $entry->pmRecord   = $todayRecords->get($studentId . '_PM')?->first();
+                $entry->otRecord   = $todayRecords->get($studentId . '_OT')?->first();  // OT record
 
                 $sectionObj->students->push($entry);
             }
@@ -131,7 +132,7 @@ class AttendanceController extends Controller
 
         $validated = $request->validate([
             'date'         => 'required|date',
-            'session'      => 'required|in:AM,PM',
+            'session'      => 'required|in:AM,PM,OT',
             'time_in'      => 'required',
             'time_out'     => 'nullable',
             'hours_worked' => 'nullable|numeric|min:0',
@@ -143,7 +144,6 @@ class AttendanceController extends Controller
         if (!$hoursWorked && $validated['time_out']) {
             $timeIn      = Carbon::parse($validated['date'] . ' ' . $validated['time_in']);
             $timeOut     = Carbon::parse($validated['date'] . ' ' . $validated['time_out']);
-            // ✅ FIXED: timeIn->diffInMinutes(timeOut) — always positive
             $hoursWorked = round($timeIn->diffInMinutes($timeOut) / 60, 2);
         }
 
@@ -181,8 +181,25 @@ class AttendanceController extends Controller
         $now     = Carbon::now();
         $today   = $now->toDateString();
         $session = strtoupper($request->input('session', ''));
-        if (!in_array($session, ['AM', 'PM'])) {
-            $session = $now->hour < 12 ? 'AM' : 'PM';
+
+        if (!in_array($session, ['AM', 'PM', 'OT'])) {
+            // Auto‑detect only if not provided
+            if ($now->hour < 12) $session = 'AM';
+            elseif ($now->hour < 18) $session = 'PM';
+            else $session = 'OT';
+        }
+
+        // Determine cut-off time for this session (based on current date)
+        $cutoff = match($session) {
+            'AM' => Carbon::today()->setTime(11, 50),
+            'PM' => Carbon::today()->setTime(16, 50),
+            'OT' => null, // OT has no cut‑off
+            default => null,
+        };
+
+        if ($cutoff && $now->gt($cutoff)) {
+            return redirect()->back()
+                ->with('error', "Cannot record {$session} time-in after " . $cutoff->format('h:i A') . ". The session has ended.");
         }
 
         $attendance = Attendance::where('student_id', $student->id)
@@ -196,8 +213,13 @@ class AttendanceController extends Controller
                 ->with('error', "{$session} time-in already recorded for {$student->name} today.");
         }
 
-        $lateHour = $session === 'AM' ? 8 : 13;
-        $status   = $now->hour >= $lateHour ? 'late' : 'present';
+        $lateHour = match($session) {
+            'AM' => 8,
+            'PM' => 13,
+            'OT' => 18,
+            default => 12
+        };
+        $status = $now->hour >= $lateHour ? 'late' : 'present';
 
         if ($attendance) {
             $attendance->update(['time_in' => $now, 'status' => $status]);
@@ -230,8 +252,11 @@ class AttendanceController extends Controller
         $now     = Carbon::now();
         $today   = $now->toDateString();
         $session = strtoupper($request->input('session', ''));
-        if (!in_array($session, ['AM', 'PM'])) {
-            $session = $now->hour < 12 ? 'AM' : 'PM';
+        if (!in_array($session, ['AM', 'PM', 'OT'])) {
+            // Auto‑detect based on current time
+            if ($now->hour < 12) $session = 'AM';
+            elseif ($now->hour < 18) $session = 'PM';
+            else $session = 'OT';
         }
 
         $attendance = Attendance::where('student_id', $student->id)
@@ -247,8 +272,6 @@ class AttendanceController extends Controller
         }
 
         $timeIn = Carbon::parse($attendance->time_in);
-
-        // ✅ FIXED: timeIn->diffInMinutes(now) — correct order, always positive
         $hoursWorked = round($timeIn->diffInMinutes($now) / 60, 2);
 
         $attendance->update([
@@ -264,7 +287,6 @@ class AttendanceController extends Controller
 
     /**
      * Recalculate and save internship total_hours_rendered from all attendance records.
-     * Always uses the sum so it stays accurate even after manual edits.
      */
     private function recalcInternshipHours(Internship $internship): void
     {

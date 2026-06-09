@@ -26,34 +26,42 @@
                         &nbsp;|&nbsp; {{ $qrCode->valid_date->format('F d, Y') }}
                     </small>
                 </div>
+                @php
+                    $expiresAt = match($qrCode->session) {
+                        'AM' => \Carbon\Carbon::parse($qrCode->valid_date)->setTime(11, 50),
+                        'PM' => \Carbon\Carbon::parse($qrCode->valid_date)->setTime(16, 50),
+                        'OT' => \Carbon\Carbon::parse($qrCode->valid_date)->setTime(23, 59, 59),
+                    };
+                @endphp
 
                 <div class="card-body text-center py-4">
-                    {{-- QR image via free API (no GD needed) --}}
-                    <div id="qr-container" class="mb-3">
-                        <img src="https://api.qrserver.com/v1/create-qr-code/?size=280x280&data={{ urlencode($scanUrl) }}"
-                             alt="QR Code"
-                             class="img-fluid border rounded p-2"
-                             style="max-width:280px;">
+                        {{-- QR image via free API (no GD needed) --}}
+                        <div class="mb-3">
+                            <img src="https://api.qrserver.com/v1/create-qr-code/?size=280x280&data={{ urlencode($scanUrl) }}"
+                                alt="QR Code"
+                                class="img-fluid border rounded p-2 d-block mx-auto"
+                                style="max-width:280px;">
+                        </div>
+
+                        <p class="text-muted small mb-1">
+                            Students open their phone camera and scan this code.
+                        </p>
+                      <p class="text-muted small">
+                        QR expires at <strong>{{ $expiresAt->format('h:i A') }}</strong>.
+                        @if($qrCode->session != 'OT')
+                            Students cannot time in after this time.
+                        @endif
+                    </p>
+
+                        {{-- Close session --}}
+                        <form method="POST" action="{{ route('teacher.qrcode.deactivate', $qrCode) }}" class="mt-3">
+                            @csrf
+                            <button type="submit" class="btn btn-danger btn-sm"
+                                    onclick="return confirm('Close this QR session?')">
+                                <i class="fas fa-times-circle"></i> Close QR Session
+                            </button>
+                        </form>
                     </div>
-
-                    <p class="text-muted small mb-1">
-                        Students open their phone camera and scan this code.
-                    </p>
-                    <p class="text-muted small">
-                        QR auto-expires at midnight. Close the session early with the button below.
-                    </p>
-
-                    {{-- Close session --}}
-                    <form method="POST"
-                          action="{{ route('teacher.qrcode.deactivate', $qrCode) }}"
-                          class="mt-3">
-                        @csrf
-                        <button type="submit" class="btn btn-danger btn-sm"
-                                onclick="return confirm('Close this QR session?')">
-                            <i class="fas fa-times-circle"></i> Close QR Session
-                        </button>
-                    </form>
-                </div>
             </div>
 
             {{-- Live Scan Log --}}
