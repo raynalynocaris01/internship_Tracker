@@ -22,6 +22,9 @@ Route::post('/login', [App\Http\Controllers\Auth\AuthenticatedSessionController:
 Route::post('/logout', [App\Http\Controllers\Auth\AuthenticatedSessionController::class, 'destroy'])
     ->name('logout')
     ->middleware('auth');
+// Allow guests to visit the scan URL (they will be redirected to login but we save token)
+Route::get('/student/attendance/scan/{token}', [App\Http\Controllers\Student\AttendanceController::class, 'scan'])
+    ->name('student.attendance.scan');
 
 // Protected routes (require authentication)
 Route::middleware(['auth'])->group(function () {
@@ -77,7 +80,7 @@ Route::middleware(['role:teacher'])->prefix('teacher')->name('teacher.')->group(
         Route::post('/attendance/timein', [StudentAttendanceController::class, 'timeIn'])->name('attendance.timein');
         Route::post('/attendance/timeout', [StudentAttendanceController::class, 'timeOut'])->name('attendance.timeout');
         Route::get('/history', [StudentAttendanceController::class, 'attendanceHistory'])->name('history');
-        Route::get('attendance/scan/{token}', [StudentAttendanceController::class, 'scan'])->name('attendance.scan');
+        
         Route::get('/scan', [StudentAttendanceController::class, 'showScanner'])->name('scan');
     });
     

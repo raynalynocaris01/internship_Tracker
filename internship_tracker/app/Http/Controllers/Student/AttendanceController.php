@@ -365,6 +365,11 @@ class AttendanceController extends Controller
 
     public function scan(string $token)
     {
+        // If user is not logged in, store token in session and redirect to login
+        if (!auth()->check()) {
+            session(['intended_scan_token' => $token]);
+            return redirect()->route('login')->with('info', 'Please login to record your attendance.');
+        }
         $student = auth()->user();
  
         // Validate the QR token
