@@ -177,17 +177,15 @@
                                                 $otHrs = $ot?->hours_worked ?? 0;
                                                 $totalHrs = $amHrs + $pmHrs + $otHrs;
 
-                                                $canAmOut  = $am && $am->time_in && !$am->time_out;
-                                                $canPmOut  = $pm && $pm->time_in && !$pm->time_out;
-                                                $canOtIn   = !$ot || !$ot->time_in;
-                                                $canOtOut  = $ot && $ot->time_in && !$ot->time_out;
-
-                                                // Time‑in buttons respect cut‑off times (11:50 AM for AM, 4:50 PM for PM)
                                                 $now = \Carbon\Carbon::now();
-                                                $amCutoff = \Carbon\Carbon::today()->setTime(11, 50);
-                                                $pmCutoff = \Carbon\Carbon::today()->setTime(16, 50);
-                                                $canAmIn = (!$am || !$am->time_in) && $now->lt($amCutoff);
-                                                $canPmIn = (!$pm || !$pm->time_in) && $now->lt($pmCutoff);
+                                                // Time‑in buttons respect time windows
+                                                $canAmIn = (!$am || !$am->time_in) && $now->hour < 12;
+                                                $canPmIn = (!$pm || !$pm->time_in) && $now->hour >= 12 && $now->hour < 17;
+                                                $canOtIn = (!$ot || !$ot->time_in) && $now->hour >= 17;
+
+                                                $canAmOut = $am && $am->time_in && !$am->time_out;
+                                                $canPmOut = $pm && $pm->time_in && !$pm->time_out;
+                                                $canOtOut = $ot && $ot->time_in && !$ot->time_out;
                                             @endphp
                                             <tr>
                                                 <td>
@@ -360,7 +358,7 @@
                                                         </a>
                                                     </div>
                                                 </td>
-                                            </tr>
+                                            </td>
                                             @endforeach
                                         </tbody>
                                     </table>

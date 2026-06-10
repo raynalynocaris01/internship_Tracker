@@ -212,75 +212,86 @@ class AttendanceController extends Controller
     }
 
     public function timeIn(Request $request, User $student)
-    {
-        $teacherId  = auth()->id();
-        $internship = Internship::where('student_id', $student->id)
-            ->where('teacher_id', $teacherId)->first();
+{
+    $teacherId  = auth()->id();
+    $internship = Internship::where('student_id', $student->id)
+        ->where('teacher_id', $teacherId)->first();
 
-        if (!$internship) {
-            return redirect()->back()->with('error', 'Student not under your supervision.');
-        }
-
-        $now     = Carbon::now();
-        $today   = $now->toDateString();
-        $session = strtoupper($request->input('session', ''));
-
-        if (!in_array($session, ['AM', 'PM', 'OT'])) {
-            // Auto‑detect only if not provided
-            if ($now->hour < 12) $session = 'AM';
-            elseif ($now->hour < 18) $session = 'PM';
-            else $session = 'OT';
-        }
-
-        // Determine cut-off time for this session (based on current date)
-        $cutoff = match($session) {
-            'AM' => Carbon::today()->setTime(11, 50),
-            'PM' => Carbon::today()->setTime(16, 50),
-            'OT' => null, // OT has no cut‑off
-            default => null,
-        };
-
-        if ($cutoff && $now->gt($cutoff)) {
-            return redirect()->back()
-                ->with('error', "Cannot record {$session} time-in after " . $cutoff->format('h:i A') . ". The session has ended.");
-        }
-
-        $attendance = Attendance::where('student_id', $student->id)
-            ->where('internship_id', $internship->id)
-            ->where('date', $today)
-            ->where('session', $session)
-            ->first();
-
-        if ($attendance && $attendance->time_in !== null) {
-            return redirect()->back()
-                ->with('error', "{$session} time-in already recorded for {$student->name} today.");
-        }
-
-        $lateHour = match($session) {
-            'AM' => 8,
-            'PM' => 13,
-            'OT' => 18,
-            default => 12
-        };
-        $status = $now->hour >= $lateHour ? 'late' : 'present';
-
-        if ($attendance) {
-            $attendance->update(['time_in' => $now, 'status' => $status]);
-        } else {
-            Attendance::create([
-                'student_id'    => $student->id,
-                'internship_id' => $internship->id,
-                'subject_id'    => $internship->subject_id,
-                'date'          => $today,
-                'session'       => $session,
-                'time_in'       => $now,
-                'status'        => $status,
-            ]);
-        }
-
-        return redirect()->back()
-            ->with('success', "{$session} Time In recorded for {$student->name} at " . $now->format('h:i A'));
+    if (!$internship) {
+        return redirect()->back()->with('error', 'Student not under your supervision.');
     }
+
+    $now     = Carbon::now();
+    $today   = $now->toDateString();
+    $session = strtoupper($request->input('session', ''));
+
+    if (!in_array($session, ['AM', 'PM', 'OT'])) {
+        // Auto‑detect only if not provided
+        if ($now->hour < 12) $session = 'AM';
+        elseif ($now->hour < 18) $session = 'PM';
+        else $session = 'OT';
+    }
+
+    // ✅ Enforce session‑appropriate time windows
+    if ($session === 'AM' && $now->hour >= 12) {
+        return redirect()->back()->with('error', 'AM time-in is only allowed before 12:00 PM.');
+    }
+    if ($session === 'PM' && ($now->hour < 12 || $now->hour >= 17)) {
+        return redirect()->back()->with('error', 'PM time-in is only allowed between 12:00 PM and 5:00 PM.');
+    }
+    if ($session === 'OT' && $now->hour < 17) {
+        return redirect()->back()->with('error', 'OT time-in is only allowed after 5:00 PM.');
+    }
+
+    // Determine cut-off time for this session (based on current date)
+    $cutoff = match($session) {
+        'AM' => Carbon::today()->setTime(11, 50),
+        'PM' => Carbon::today()->setTime(16, 50),
+        'OT' => null,
+        default => null,
+    };
+
+    if ($cutoff && $now->gt($cutoff)) {
+        return redirect()->back()
+            ->with('error', "Cannot record {$session} time-in after " . $cutoff->format('h:i A') . ". The session has ended.");
+    }
+
+    $attendance = Attendance::where('student_id', $student->id)
+        ->where('internship_id', $internship->id)
+        ->where('date', $today)
+        ->where('session', $session)
+        ->first();
+
+    if ($attendance && $attendance->time_in !== null) {
+        return redirect()->back()
+            ->with('error', "{$session} time-in already recorded for {$student->name} today.");
+    }
+
+    $lateHour = match($session) {
+        'AM' => 8,
+        'PM' => 13,
+        'OT' => 18,
+        default => 12
+    };
+    $status = $now->hour >= $lateHour ? 'late' : 'present';
+
+    if ($attendance) {
+        $attendance->update(['time_in' => $now, 'status' => $status]);
+    } else {
+        Attendance::create([
+            'student_id'    => $student->id,
+            'internship_id' => $internship->id,
+            'subject_id'    => $internship->subject_id,
+            'date'          => $today,
+            'session'       => $session,
+            'time_in'       => $now,
+            'status'        => $status,
+        ]);
+    }
+
+    return redirect()->back()
+        ->with('success', "{$session} Time In recorded for {$student->name} at " . $now->format('h:i A'));
+}
 
   public function timeOut(Request $request, User $student)
 {
