@@ -20,41 +20,41 @@
                 </div>
             </div>
 
-            {{-- Stats Cards --}}
+            {{-- Stats Cards (responsive) --}}
             <div class="row mb-4">
-                <div class="col-md-3">
-                    <div class="card text-white bg-primary mb-3">
-                        <div class="card-header">Total Students</div>
-                        <div class="card-body">
-                            <h5 class="card-title">{{ $totalStudents ?? 0 }}</h5>
-                            <p class="card-text">All students</p>
+                <div class="col-6 col-md-3 mb-3">
+                    <div class="card text-white bg-primary h-100">
+                        <div class="card-header py-2 small">Total Students</div>
+                        <div class="card-body py-2">
+                            <h5 class="card-title mb-0">{{ $totalStudents ?? 0 }}</h5>
+                            <p class="card-text small mb-0">All students</p>
                         </div>
                     </div>
                 </div>
-                <div class="col-md-3">
-                    <div class="card text-white bg-success mb-3">
-                        <div class="card-header">Active Internships</div>
-                        <div class="card-body">
-                            <h5 class="card-title">{{ $activeInternships ?? 0 }}</h5>
-                            <p class="card-text">Currently active</p>
+                <div class="col-6 col-md-3 mb-3">
+                    <div class="card text-white bg-success h-100">
+                        <div class="card-header py-2 small">Active Internships</div>
+                        <div class="card-body py-2">
+                            <h5 class="card-title mb-0">{{ $activeInternships ?? 0 }}</h5>
+                            <p class="card-text small mb-0">Currently active</p>
                         </div>
                     </div>
                 </div>
-                <div class="col-md-3">
-                    <div class="card text-white bg-info mb-3">
-                        <div class="card-header">Total Hours</div>
-                        <div class="card-body">
-                            <h5 class="card-title">{{ $totalHours ?? 0 }}</h5>
-                            <p class="card-text">Hours completed</p>
+                <div class="col-6 col-md-3 mb-3">
+                    <div class="card text-white bg-info h-100">
+                        <div class="card-header py-2 small">Total Hours</div>
+                        <div class="card-body py-2">
+                            <h5 class="card-title mb-0">{{ $totalHours ?? 0 }}</h5>
+                            <p class="card-text small mb-0">Hours completed</p>
                         </div>
                     </div>
                 </div>
-                <div class="col-md-3">
-                    <div class="card text-white bg-warning mb-3">
-                        <div class="card-header">Today's Attendance</div>
-                        <div class="card-body">
-                            <h5 class="card-title">{{ $todayAttendance ?? 0 }}</h5>
-                            <p class="card-text">Logged in today</p>
+                <div class="col-6 col-md-3 mb-3">
+                    <div class="card text-white bg-warning h-100">
+                        <div class="card-header py-2 small">Today's Attendance</div>
+                        <div class="card-body py-2">
+                            <h5 class="card-title mb-0">{{ $todayAttendance ?? 0 }}</h5>
+                            <p class="card-text small mb-0">Logged in today</p>
                         </div>
                     </div>
                 </div>
@@ -62,7 +62,7 @@
 
             {{-- Students by Section --}}
             <div class="card">
-                <div class="card-header d-flex justify-content-between align-items-center"
+                <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2"
                      style="background-color: #216699; color: white;">
                     <h4 class="mb-0"><i class="fas fa-users"></i> Students by Section</h4>
                     <a href="{{ route('teacher.students.create') }}" class="btn btn-light btn-sm">
@@ -86,7 +86,8 @@
 
                     @if(isset($sections) && $sections->count() > 0)
 
-                        <ul class="nav nav-tabs mb-3" id="sectionTabs" role="tablist">
+                        {{-- Section Tabs (scrollable on mobile if many) --}}
+                        <ul class="nav nav-tabs mb-3 flex-nowrap overflow-auto" id="sectionTabs" role="tablist" style="white-space: nowrap;">
                             @foreach($sections as $index => $section)
                                 <li class="nav-item" role="presentation">
                                     <button class="nav-link {{ $index == 0 ? 'active' : '' }}"
@@ -107,95 +108,30 @@
                                      role="tabpanel">
 
                                     @if($section->students->count() > 0)
-                                        <div class="table-responsive">
-                                            <table class="table table-hover">
-                                                <thead>
-                                                    <tr>
-                                                        <th>Student ID</th>
-                                                        <th>Name</th>
-                                                        <th>Course</th>
-                                                        <th>Subject</th>
-                                                        <th>Company</th>
-                                                        <th>Progress</th>
-                                                        <th>Total Hours</th>
-                                                        <th>Status</th>
-                                                        <th>Actions</th>
-                                                    </tr>
-                                                </thead>
-                                                <tbody>
-                                                    @foreach($section->students as $student)
-                                                    @php
-                                                        // Use currentInternship set by controller, NOT $student->internships->first()
-                                                        $internship        = $student->currentInternship ?? null;
-                                                        $hasInternship     = $internship !== null;
-                                                        $progress          = $hasInternship ? $internship->progress : 0;
-                                                        $totalHoursStudent = $student->attendances?->sum('hours_worked') ?? 0;
-                                                    @endphp
-                                                    <tr>
-                                                        <td>{{ $student->student_id ?? 'N/A' }}</td>
-                                                        <td>
-                                                            {{ $student->name }}<br>
-                                                            <small class="text-muted">{{ $student->email }}</small>
-                                                        </td>
-                                                        <td>
-                                                            {{ $student->course ?? 'N/A' }}<br>
-                                                            <small>Year {{ $student->year_level ?? 'N/A' }}</small>
-                                                        </td>
-                                                        <td>
-                                                            @if($hasInternship)
-                                                                <strong>{{ $internship->subject->code ?? 'N/A' }}</strong><br>
-                                                                <small class="text-muted">{{ $internship->subject->name ?? '' }}</small>
-                                                            @else
-                                                                <span class="badge bg-secondary">Not Assigned</span>
-                                                            @endif
-                                                        </td>
-                                                        <td>
-                                                            @if($hasInternship)
-                                                                {{ $internship->company_name ?? 'School-based' }}
-                                                                @if($internship->position)
-                                                                    <br><small class="text-muted">{{ $internship->position }}</small>
-                                                                @endif
-                                                            @else
-                                                                —
-                                                            @endif
-                                                        </td>
-                                                        <td>
-                                                            @if($hasInternship)
-                                                                <div class="progress" style="height: 6px; width: 100px; display: inline-block;">
-                                                                    <div class="progress-bar bg-success" style="width: {{ $progress }}%"></div>
-                                                                </div>
-                                                                <span class="ms-1">{{ number_format($progress, 1) }}%</span>
-                                                            @else
-                                                                <span class="text-muted">—</span>
-                                                            @endif
-                                                        </td>
-                                                        <td>
-                                                            <strong>{{ number_format($totalHoursStudent, 1) }}</strong> /
-                                                            {{ $hasInternship ? $internship->subject->required_hours : 0 }} hrs
-                                                        </td>
-                                                        <td>
-                                                            @if($hasInternship)
-                                                                @if($internship->status == 'active')
-                                                                    <span class="badge bg-success">Active</span>
-                                                                @elseif($internship->status == 'completed')
-                                                                    <span class="badge bg-info">Completed</span>
-                                                                @elseif($internship->status == 'pending')
-                                                                    <span class="badge bg-warning">Pending</span>
-                                                                @else
-                                                                    <span class="badge bg-danger">Dropped</span>
-                                                                @endif
-                                                            @else
-                                                                <span class="badge bg-secondary">No Internship</span>
-                                                            @endif
-                                                        </td>
-                                                        <td>
+                                        {{-- Mobile‑friendly student cards --}}
+                                        @foreach($section->students as $student)
+                                            @php
+                                                $internship        = $student->currentInternship ?? null;
+                                                $hasInternship     = $internship !== null;
+                                                $progress          = $hasInternship ? $internship->progress : 0;
+                                                $totalHoursStudent = $student->attendances?->sum('hours_worked') ?? 0;
+                                            @endphp
+                                            <div class="card mb-3 shadow-sm">
+                                                <div class="card-body p-3">
+                                                    {{-- Header: Name + Actions --}}
+                                                    <div class="d-flex justify-content-between align-items-start mb-2">
+                                                        <div>
+                                                            <strong class="fs-6">{{ $student->name }}</strong><br>
+                                                            <small class="text-muted">{{ $student->student_id ?? 'N/A' }}</small>
+                                                        </div>
+                                                        <div class="btn-group btn-group-sm">
                                                             <a href="{{ route('teacher.students.show', $student) }}"
-                                                               class="btn btn-sm btn-info" title="View Details">
+                                                               class="btn btn-info" title="View Details">
                                                                 <i class="fas fa-eye"></i>
                                                             </a>
                                                             @if(!$hasInternship)
                                                                 <button type="button"
-                                                                        class="btn btn-sm btn-primary assign-single"
+                                                                        class="btn btn-primary assign-single"
                                                                         data-bs-toggle="modal"
                                                                         data-bs-target="#singleAssignModal"
                                                                         data-student-id="{{ $student->id }}"
@@ -204,12 +140,62 @@
                                                                     <i class="fas fa-briefcase"></i>
                                                                 </button>
                                                             @endif
-                                                        </td>
-                                                    </tr>
-                                                    @endforeach
-                                                </tbody>
-                                            </table>
-                                        </div>
+                                                        </div>
+                                                    </div>
+
+                                                    {{-- Details row --}}
+                                                    <div class="row g-2 small mb-2">
+                                                        <div class="col-6">
+                                                            <span class="text-muted">Course:</span> {{ $student->course ?? 'N/A' }}<br>
+                                                            <span class="text-muted">Year:</span> {{ $student->year_level ?? 'N/A' }}
+                                                        </div>
+                                                        <div class="col-6">
+                                                            @if($hasInternship)
+                                                                <span class="text-muted">Subject:</span> {{ $internship->subject->code ?? 'N/A' }}<br>
+                                                                <span class="text-muted">Company:</span> {{ $internship->company_name ?? 'School-based' }}
+                                                            @else
+                                                                <span class="badge bg-secondary">Not Assigned</span>
+                                                            @endif
+                                                        </div>
+                                                    </div>
+
+                                                    {{-- Progress and Hours --}}
+                                                    @if($hasInternship)
+                                                        <div class="mb-2">
+                                                            <div class="d-flex justify-content-between small mb-1">
+                                                                <span>Progress</span>
+                                                                <span>{{ number_format($progress, 1) }}%</span>
+                                                            </div>
+                                                            <div class="progress" style="height: 6px;">
+                                                                <div class="progress-bar bg-success" style="width: {{ $progress }}%"></div>
+                                                            </div>
+                                                        </div>
+                                                        <div class="d-flex justify-content-between align-items-center">
+                                                            <div>
+                                                                <span class="text-muted small">Hours:</span>
+                                                                <strong>{{ number_format($totalHoursStudent, 1) }}</strong>
+                                                                / {{ $internship->subject->required_hours }} hrs
+                                                            </div>
+                                                            <div>
+                                                                @if($internship->status == 'active')
+                                                                    <span class="badge bg-success">Active</span>
+                                                                @elseif($internship->status == 'completed')
+                                                                    <span class="badge bg-info">Completed</span>
+                                                                @elseif($internship->status == 'pending')
+                                                                    <span class="badge bg-warning text-dark">Pending</span>
+                                                                @else
+                                                                    <span class="badge bg-danger">Dropped</span>
+                                                                @endif
+                                                            </div>
+                                                        </div>
+                                                    @else
+                                                        <div class="text-center py-2">
+                                                            <span class="badge bg-secondary">No Internship</span>
+                                                        </div>
+                                                    @endif
+                                                </div>
+                                            </div>
+                                        @endforeach
                                     @else
                                         <div class="text-center py-4">
                                             <i class="fas fa-users fa-3x text-muted mb-3"></i>
@@ -237,7 +223,7 @@
     </div>
 </div>
 
-{{-- Single Assign Modal --}}
+{{-- Single Assign Modal (unchanged) --}}
 <div class="modal fade" id="singleAssignModal" tabindex="-1">
     <div class="modal-dialog">
         <div class="modal-content">
